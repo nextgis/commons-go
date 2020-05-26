@@ -17,57 +17,70 @@ var contextKey = ""
 
 // Context of an application
 type Context struct {
-	config *viper.Viper
+	Config *viper.Viper
 }
 
 // StringOption return string settings option
 func (c *Context) StringOption(key string) string {
-	return c.config.GetString(key)
+	return c.Config.GetString(key)
 }
 
 
 // BoolOption return boolean settings option
 func (c *Context) BoolOption(key string) bool {
-	return c.config.GetBool(key)
+	return c.Config.GetBool(key)
 }
 
 // IntOption return boolean settings option
 func (c *Context) IntOption(key string) int {
-	return c.config.GetInt(key)
+	return c.Config.GetInt(key)
 }
 
 // DurationOption return time duration option
 func (c *Context) DurationOption(key string) time.Duration {
-	return c.config.GetDuration(key)
+	return c.Config.GetDuration(key)
 }
 
 // StringSliceOption return string slice option
 func (c *Context) StringSliceOption(key string) []string {
-	return c.config.GetStringSlice(key)
+	return c.Config.GetStringSlice(key)
 }
 
 // SetStringOption set string option
 func (c *Context) SetStringOption(key string, value string) error {
-	c.config.Set(key, value)
-	return c.config.WriteConfig()
+	c.Config.Set(key, value)
+	return c.Config.WriteConfig()
 }
 
 // SetBoolOption set string option
 func (c *Context) SetBoolOption(key string, value bool) error {
-	c.config.Set(key, value)
-	return c.config.WriteConfig()
+	c.Config.Set(key, value)
+	return c.Config.WriteConfig()
 }
 
 // SetIntOption set string option
 func (c *Context) SetIntOption(key string, value int) error {
-	c.config.Set(key, value)
-	return c.config.WriteConfig()
+	c.Config.Set(key, value)
+	return c.Config.WriteConfig()
 }
 
 // SetUintOption set string option
 func (c *Context) SetUintOption(key string, value uint) error {
-	c.config.Set(key, value)
-	return c.config.WriteConfig()
+	c.Config.Set(key, value)
+	return c.Config.WriteConfig()
+}
+
+// Context Will add the application context to the context
+func (c *Context) Context() gin.HandlerFunc {
+	return func(cg *gin.Context) {
+		cg.Set(contextKey, c)
+		cg.Next()
+	}
+}
+
+// WriteConfig write config
+func (c *Context) WriteConfig() error {
+	return c.Config.WriteConfig()
 }
 
 // SetDefaults Set application defaults
@@ -95,9 +108,8 @@ func SetDefaults(appname string) {
 	contextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }
 
-
-// CreateSession create new session and return handler.
-func (c *Context) CreateSession(appname string) gin.HandlerFunc {
+// CreateSession Create new session and return handler.
+func CreateSession(appname string) gin.HandlerFunc {
 	secretKey := viper.GetString("SESSION_KEY")
 	store := cookie.NewStore([]byte(secretKey))
 	store.Options(sessions.Options{
@@ -110,28 +122,9 @@ func (c *Context) CreateSession(appname string) gin.HandlerFunc {
 	return sessions.Sessions(appname + "_session", store)
 }
 
-// WriteConfig write config
-func (c *Context) WriteConfig() error {
-	return c.config.WriteConfig()
-}
-
-
-// DefaultContext Is shortcut to get context
-func DefaultContext(c *gin.Context) *Context {
-	return c.MustGet(contextKey).(*Context)
-}
-
 // DefaultSession is shortcut to get session
 func DefaultSession(c *gin.Context) sessions.Session {
 	return c.MustGet(sessions.DefaultKey).(sessions.Session)
-}
-
-// Context Will add the application context to the context
-func (c *Context) Context() gin.HandlerFunc {
-	return func(cg *gin.Context) {
-		cg.Set(contextKey, c)
-		cg.Next()
-	}
 }
 
 // GetBaseURL return base usr as scheme + host + port
@@ -140,9 +133,8 @@ func GetBaseURL(gc *gin.Context) string {
 	return url.Scheme + "://" + url.Host
 }
 
-
-// GetContext return application context
-func GetContext(appname string) *Context {
+// GetConfig return application context
+func GetConfig(appname string) *viper.Viper {
 	viper.SetConfigName("config")
 	viper.AutomaticEnv()
 
@@ -158,9 +150,6 @@ func GetContext(appname string) *Context {
 		fmt.Println("Config file read error: " + err.Error())
 	}
 
-	context := &Context{}
-	context.config = viper.GetViper()
-
 	// Create file store
 	os.MkdirAll(viper.GetString("FILE_STORE"), 0755)
 
@@ -168,5 +157,10 @@ func GetContext(appname string) *Context {
 		fmt.Println(err.Error())
 	}
 
-	return context
+	return viper.GetViper()
+}
+
+// GetContextKey Return context value
+func GetContextKey() string {
+	return contextKey
 }

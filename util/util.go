@@ -87,8 +87,10 @@ func ContainsUint(a []uint, x uint) bool {
 	return false
 }
 
-var infinityDate = time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
-var outDate = time.Date(1970, time.January, 1, 12, 0, 0, 0, time.UTC)
+// InfinityDate Infinity date
+var InfinityDate = time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
+// OutDate Default date
+var OutDate = time.Date(1970, time.January, 1, 12, 0, 0, 0, time.UTC)
 
 // StringToDate Convert string to date
 func StringToDate(date string, defaultVal time.Time) time.Time {
