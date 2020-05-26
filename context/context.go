@@ -13,7 +13,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var contextKey = ""
+// ContextKey Context key value
+var ContextKey = ""
 
 // Context of an application
 type Context struct {
@@ -73,7 +74,7 @@ func (c *Context) SetUintOption(key string, value uint) error {
 // Context Will add the application context to the context
 func (c *Context) Context() gin.HandlerFunc {
 	return func(cg *gin.Context) {
-		cg.Set(contextKey, c)
+		cg.Set(ContextKey, c)
 		cg.Next()
 	}
 }
@@ -105,7 +106,7 @@ func SetDefaults(appname string) {
 	viper.SetDefault("OAUTH2_LOGIN", false)
 	viper.SetDefault("OAUTH2_ENDPOINT", "https://my.nextgis.com")
 
-	contextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
+	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }
 
 // CreateSession Create new session and return handler.
@@ -160,7 +161,7 @@ func GetConfig(appname string) *viper.Viper {
 	return viper.GetViper()
 }
 
-// GetContextKey Return context value
-func GetContextKey() string {
-	return contextKey
+// DefaultContext Is shortcut to get context
+func DefaultContext(c *gin.Context) *Context {
+	return c.MustGet(ContextKey).(*Context)
 }
