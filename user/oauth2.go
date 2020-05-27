@@ -72,7 +72,7 @@ type OAuth2Info struct {
 }
 
 // InitInfo Init OAuth2 Information
-func (oi *OAuth2Info) InitInfo(context *context.Context) {
+func (oi *OAuth2Info) InitInfo() {
 	oi.Enable = context.BoolOption("OAUTH2_LOGIN") 
 	oi.ClientID = context.StringOption("OAUTH2_CLIENT_ID")
 	oi.ClientSecret = context.StringOption("OAUTH2_CLIENT_SECRET")
@@ -81,13 +81,13 @@ func (oi *OAuth2Info) InitInfo(context *context.Context) {
 }
 
 // GetToken Get access token
-func GetToken(ctx *context.Context, code string) (*TokenJSON, error) {
-	url := ctx.StringOption("OAUTH2_ENDPOINT") + "/oauth2/token/?client_id=" +
-		ctx.StringOption("OAUTH2_CLIENT_ID") + "&client_secret=" +
-		ctx.StringOption("OAUTH2_CLIENT_SECRET") + "&grant_type=authorization_code&code=" +
-		code + "&redirect_uri=" + ctx.StringOption("OAUTH2_REDIRECT_URI")
+func GetToken(code string) (*TokenJSON, error) {
+	url := context.StringOption("OAUTH2_ENDPOINT") + "/oauth2/token/?client_id=" +
+	context.StringOption("OAUTH2_CLIENT_ID") + "&client_secret=" +
+	context.StringOption("OAUTH2_CLIENT_SECRET") + "&grant_type=authorization_code&code=" +
+		code + "&redirect_uri=" + context.StringOption("OAUTH2_REDIRECT_URI")
 	var netClient = &http.Client{
-		Timeout: time.Second * time.Duration(ctx.IntOption("TIMEOUT")),
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
 	req, err := http.NewRequest("POST", url, nil)
@@ -118,11 +118,11 @@ func GetToken(ctx *context.Context, code string) (*TokenJSON, error) {
 }
 
 // GetUserInfo Get user information
-func GetUserInfo(ctx *context.Context, token *TokenJSON) (*NGUserInfo, error) {
+func GetUserInfo(token *TokenJSON) (*NGUserInfo, error) {
 	var netClient = &http.Client{
-		Timeout: time.Second * time.Duration(ctx.IntOption("TIMEOUT")),
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
-	req, err := http.NewRequest("GET", ctx.StringOption("OAUTH2_ENDPOINT")+"/api/v1/user_info/", nil)
+	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/user_info/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to prepare user_info request. %s", err.Error())
 	}
@@ -151,15 +151,15 @@ func GetUserInfo(ctx *context.Context, token *TokenJSON) (*NGUserInfo, error) {
 }
 
 // TokenIntrospection Token introspection
-func TokenIntrospection(ctx *context.Context, token *TokenJSON) (*NGTokenInfo, error) {
+func TokenIntrospection(token *TokenJSON) (*NGTokenInfo, error) {
 	var netClient = &http.Client{
-		Timeout: time.Second * time.Duration(ctx.IntOption("TIMEOUT")),
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	url := fmt.Sprintf("%s/oauth2/introspect/?token=%s&client_id=%s&client_secret=%s",
-		ctx.StringOption("OAUTH2_ENDPOINT"),
+	context.StringOption("OAUTH2_ENDPOINT"),
 		token.AccessToken,
-		ctx.StringOption("OAUTH2_CLIENT_ID"),
-		ctx.StringOption("OAUTH2_CLIENT_SECRET"))
+		context.StringOption("OAUTH2_CLIENT_ID"),
+		context.StringOption("OAUTH2_CLIENT_SECRET"))
 	if gin.IsDebugging() {
 		fmt.Printf("Token introspection URL: %s\n", url)
 	}
@@ -190,11 +190,11 @@ func TokenIntrospection(ctx *context.Context, token *TokenJSON) (*NGTokenInfo, e
 }
 
 // GetSupportInfo Get support information
-func GetSupportInfo(ctx *context.Context, token *TokenJSON) (*NGSupportInfo, error) {
+func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	var netClient = &http.Client{
-		Timeout: time.Second * time.Duration(ctx.IntOption("TIMEOUT")),
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
-	req, err := http.NewRequest("GET", ctx.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
+	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to prepare support_info request. %s", err.Error())
 	}
@@ -227,14 +227,14 @@ type ngUserSupportResult struct {
 }
 
 // GetUserSuppotInfo Get user and support information
-func GetUserSuppotInfo(ctx *context.Context, ngID string) (*NGUserSupportInfo, error) {
+func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	var netClient = &http.Client{
-		Timeout: time.Second * time.Duration(ctx.IntOption("TIMEOUT")),
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
-	req, err := http.NewRequest("GET", ctx.StringOption("OAUTH2_ENDPOINT")+
+	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+
 		"/api/v1/integration/user_info/"+ngID+
-		"?client_id="+ctx.StringOption("OAUTH2_CLIENT_ID")+
-		"&client_secret="+ctx.StringOption("OAUTH2_CLIENT_SECRET"), nil)
+		"?client_id="+context.StringOption("OAUTH2_CLIENT_ID")+
+		"&client_secret="+context.StringOption("OAUTH2_CLIENT_SECRET"), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to prepare integration/user_info request. %s", err.Error())
 	}
@@ -274,11 +274,10 @@ type oauth2Options struct {
 
 // OAuth2Options Get oauth options: endpoint, cleint_id, etc.
 func OAuth2Options(gc *gin.Context) {
-	ctx := context.DefaultContext(gc)
 	var options = &oauth2Options{
-		Enabled:       ctx.BoolOption("OAUTH2_LOGIN"),
-		OAuthEndPoint: ctx.StringOption("OAUTH2_ENDPOINT"),
-		ClientID:      ctx.StringOption("OAUTH2_CLIENT_ID"),
-		RedirectURI:   ctx.StringOption("OAUTH2_REDIRECT_URI")}
+		Enabled:       context.BoolOption("OAUTH2_LOGIN"),
+		OAuthEndPoint: context.StringOption("OAUTH2_ENDPOINT"),
+		ClientID:      context.StringOption("OAUTH2_CLIENT_ID"),
+		RedirectURI:   context.StringOption("OAUTH2_REDIRECT_URI")}
 	gc.JSON(http.StatusOK, options)
 }

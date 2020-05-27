@@ -9,6 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// InfinityDate Infinity date
+var InfinityDate = time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
+// OutDate Default date
+var OutDate = time.Date(1970, time.January, 1, 12, 0, 0, 0, time.UTC)
+
 // ArrayFromString Create array of values from separated string
 func ArrayFromString(values string, separator string) []string {
 	valuesArray := strings.Split(values, separator)
@@ -86,11 +91,6 @@ func ContainsUint(a []uint, x uint) bool {
 	}
 	return false
 }
-
-// InfinityDate Infinity date
-var InfinityDate = time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
-// OutDate Default date
-var OutDate = time.Date(1970, time.January, 1, 12, 0, 0, 0, time.UTC)
 
 // StringToDate Convert string to date
 func StringToDate(date string, defaultVal time.Time) time.Time {

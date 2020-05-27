@@ -16,102 +16,102 @@ import (
 // ContextKey Context key value
 var ContextKey = ""
 
-// Context of an application
-type Context struct {
-	Config *viper.Viper
-}
-
 // StringOption return string settings option
-func (c *Context) StringOption(key string) string {
-	return c.Config.GetString(key)
+func StringOption(key string) string {
+	return viper.GetString(key)
 }
 
 
 // BoolOption return boolean settings option
-func (c *Context) BoolOption(key string) bool {
-	return c.Config.GetBool(key)
+func BoolOption(key string) bool {
+	return viper.GetBool(key)
 }
 
 // IntOption return boolean settings option
-func (c *Context) IntOption(key string) int {
-	return c.Config.GetInt(key)
+func IntOption(key string) int {
+	return viper.GetInt(key)
 }
 
 // DurationOption return time duration option
-func (c *Context) DurationOption(key string) time.Duration {
-	return c.Config.GetDuration(key)
+func DurationOption(key string) time.Duration {
+	return viper.GetDuration(key)
 }
 
 // StringSliceOption return string slice option
-func (c *Context) StringSliceOption(key string) []string {
-	return c.Config.GetStringSlice(key)
+func StringSliceOption(key string) []string {
+	return viper.GetStringSlice(key)
 }
 
 // SetStringOption set string option
-func (c *Context) SetStringOption(key string, value string) error {
-	c.Config.Set(key, value)
-	return c.Config.WriteConfig()
+func SetStringOption(key string, value string) error {
+	viper.Set(key, value)
+	return WriteConfig()
 }
 
 // SetBoolOption set string option
-func (c *Context) SetBoolOption(key string, value bool) error {
-	c.Config.Set(key, value)
-	return c.Config.WriteConfig()
+func SetBoolOption(key string, value bool) error {
+	viper.Set(key, value)
+	return WriteConfig()
 }
 
 // SetIntOption set string option
-func (c *Context) SetIntOption(key string, value int) error {
-	c.Config.Set(key, value)
-	return c.Config.WriteConfig()
+func SetIntOption(key string, value int) error {
+	viper.Set(key, value)
+	return WriteConfig()
 }
 
 // SetUintOption set string option
-func (c *Context) SetUintOption(key string, value uint) error {
-	c.Config.Set(key, value)
-	return c.Config.WriteConfig()
+func SetUintOption(key string, value uint) error {
+	viper.Set(key, value)
+	return WriteConfig()
 }
 
-// Context Will add the application context to the context
-func (c *Context) Context() gin.HandlerFunc {
+// SetDefaultOption Set default value to option
+func SetDefaultOption(key string, value interface{}) {
+	viper.SetDefault(key, value)
+}
+
+// CreateContext Will add the application context to the context
+func CreateContext(value interface{}) gin.HandlerFunc {
 	return func(cg *gin.Context) {
-		cg.Set(ContextKey, c)
+		cg.Set(ContextKey, value)
 		cg.Next()
 	}
 }
 
 // WriteConfig write config
-func (c *Context) WriteConfig() error {
-	return c.Config.WriteConfig()
+func WriteConfig() error {
+	return viper.WriteConfig()
 }
 
 // SetDefaults Set application defaults
 func SetDefaults(appname string) {
 	// Common
-	viper.SetDefault("DEBUG", true)
-	viper.SetDefault("ADMIN_PASSWORD", "admin")
-	viper.SetDefault("FILE_STORE", "./" + appname)
-	viper.SetDefault("SESSION_KEY", "secret")
+	SetDefaultOption("DEBUG", true)
+	SetDefaultOption("ADMIN_PASSWORD", "admin")
+	SetDefaultOption("FILE_STORE", "./" + appname)
+	SetDefaultOption("SESSION_KEY", "secret")
 
 	// LDAP
-	viper.SetDefault("LDAP_LOGIN", false)
-	viper.SetDefault("LDAP_TLS", "No")
-	viper.SetDefault("LDAP_URL", "")
-	viper.SetDefault("LDAP_USER_FILTER", "(objectClass=posixAccount)")
-	viper.SetDefault("LDAP_USER_ATTR", "uid")
-	viper.SetDefault("LDAP_GROUP_FILTER", fmt.Sprintf("(cn=%s)", appname))
-	viper.SetDefault("LDAP_GROUP_ATTR", "memberUid")
-	viper.SetDefault("LDAP_DEFAULT_GROUP_ID", 0)
+	SetDefaultOption("LDAP_LOGIN", false)
+	SetDefaultOption("LDAP_TLS", "No")
+	SetDefaultOption("LDAP_URL", "")
+	SetDefaultOption("LDAP_USER_FILTER", "(objectClass=posixAccount)")
+	SetDefaultOption("LDAP_USER_ATTR", "uid")
+	SetDefaultOption("LDAP_GROUP_FILTER", fmt.Sprintf("(cn=%s)", appname))
+	SetDefaultOption("LDAP_GROUP_ATTR", "memberUid")
+	SetDefaultOption("LDAP_DEFAULT_GROUP_ID", 0)
 
 	// oAuth2
-	viper.SetDefault("OAUTH2_LOGIN", false)
-	viper.SetDefault("OAUTH2_ENDPOINT", "https://my.nextgis.com")
+	SetDefaultOption("OAUTH2_LOGIN", false)
+	SetDefaultOption("OAUTH2_ENDPOINT", "https://my.nextgis.com")
 
 	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }
 
 // CreateSession Create new session and return handler.
 func CreateSession(appname string) gin.HandlerFunc {
-	secretKey := viper.GetString("SESSION_KEY")
+	secretKey := StringOption("SESSION_KEY")
 	store := cookie.NewStore([]byte(secretKey))
 	store.Options(sessions.Options{
 		MaxAge: 3600*72,
@@ -134,8 +134,8 @@ func GetBaseURL(gc *gin.Context) string {
 	return url.Scheme + "://" + url.Host
 }
 
-// GetConfig return application context
-func GetConfig(appname string) *viper.Viper {
+// SetupConfig return application context
+func SetupConfig(appname string) {
 	viper.SetConfigName("config")
 	viper.AutomaticEnv()
 
@@ -157,11 +157,4 @@ func GetConfig(appname string) *viper.Viper {
 	if err := viper.WriteConfigAs(filepath.Join(configPath, "config.yml")); err != nil {
 		fmt.Println(err.Error())
 	}
-
-	return viper.GetViper()
-}
-
-// DefaultContext Is shortcut to get context
-func DefaultContext(c *gin.Context) *Context {
-	return c.MustGet(ContextKey).(*Context)
 }

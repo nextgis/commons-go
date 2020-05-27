@@ -1,21 +1,22 @@
 package users
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 
 	"gopkg.in/ldap.v3"
 
 	"github.com/nextgis/commons-go/context"
 )
 
-func searchLDAPUser(context *context.Context, username string, conn *ldap.Conn) (*ldap.Entry, error) {
+func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 	usernameEscaped := ldap.EscapeFilter(username)
 
 	baseDN := context.StringOption("LDAP_BASE_DN")
@@ -45,7 +46,7 @@ func searchLDAPUser(context *context.Context, username string, conn *ldap.Conn) 
 
 	return nil, errors.New("User not found or too many entries returned")
 }
-func createLDAPConnection(context *context.Context) (*ldap.Conn, error) {
+func createLDAPConnection() (*ldap.Conn, error) {
 	url := context.StringOption("LDAP_URL")
 	tlsType := context.StringOption("LDAP_TLS")
 	tlsNoVerify := context.BoolOption("LDAP_TLS_NO_VERIFY")
@@ -105,9 +106,9 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 }
 
 // AuthenticateLDAPUser Authenticate LDAP User
-func AuthenticateLDAPUser(context *context.Context, username string, password string) error {
+func AuthenticateLDAPUser(username string, password string) error {
 
-	connection, err := createLDAPConnection(context)
+	connection, err := createLDAPConnection()
 	if err != nil {
 		return err
 	}
@@ -121,12 +122,12 @@ func AuthenticateLDAPUser(context *context.Context, username string, password st
 		return err
 	}
 
-	userDN, err := searchLDAPUser(context, username, connection)
+	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
 		return err
 	}
 
-	userGroups := getLDAPGroups(context, userDN, connection)
+	userGroups := getLDAPGroups(userDN, connection)
 
 	err = connection.Bind(userDN.DN, password)
 	if err != nil {
@@ -140,8 +141,8 @@ func AuthenticateLDAPUser(context *context.Context, username string, password st
 	return nil
 }
 
-func getLDAPUserGroups(context *context.Context, username string) ([]string, error) {
-	connection, err := createLDAPConnection(context)
+func getLDAPUserGroups(username string) ([]string, error) {
+	connection, err := createLDAPConnection()
 	if err != nil {
 		return nil, err
 	}
@@ -155,18 +156,18 @@ func getLDAPUserGroups(context *context.Context, username string) ([]string, err
 		return nil, err
 	}
 
-	userDN, err := searchLDAPUser(context, username, connection)
+	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
 		return nil, err
 	}
 
-	userGroups := getLDAPGroups(context, userDN, connection)
+	userGroups := getLDAPGroups(userDN, connection)
 
 	return userGroups, nil
 }
 
 // Get a list of group names for specified user from LDAP/AD
-func getLDAPGroups(context *context.Context, userDN *ldap.Entry, conn *ldap.Conn) []string {
+func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 	groups := make([]string, 0)
 	userUID := userDN.GetAttributeValue("uid")
 	userDNEscaped := ldap.EscapeFilter(userUID)
@@ -196,8 +197,8 @@ func getLDAPGroups(context *context.Context, userDN *ldap.Entry, conn *ldap.Conn
 }
 
 // GetLDAPUserDetails Get LDAP user details
-func GetLDAPUserDetails(context *context.Context, username string, password string) (string, string, error) {
-	connection, err := createLDAPConnection(context)
+func GetLDAPUserDetails(username string, password string) (string, string, error) {
+	connection, err := createLDAPConnection()
 	if err != nil {
 		return "", "", err
 	}
@@ -210,14 +211,14 @@ func GetLDAPUserDetails(context *context.Context, username string, password stri
 		return "", "", errb
 	}
 
-	userDN, err := searchLDAPUser(context, username, connection)
+	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
 		return "", "", err
 	}
 
 	userDN.PrettyPrint(2)
 
-	userGroups := getLDAPGroups(context, userDN, connection)
+	userGroups := getLDAPGroups(userDN, connection)
 
 	// Check password
 	if errb := connection.Bind(userDN.DN, password); errb != nil {
@@ -253,7 +254,7 @@ type LdapInfo struct {
 }
 
 // InitInfo Fill LdapInfo structure by values
-func (li *LdapInfo) InitInfo(context *context.Context) {
+func (li *LdapInfo) InitInfo() {
 	li.Enable = context.BoolOption("LDAP_LOGIN")
 	li.BaseDN = context.StringOption("LDAP_BASE_DN")
 	li.UserFilter = context.StringOption("LDAP_USER_FILTER")
