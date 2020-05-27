@@ -2,7 +2,11 @@ package util
 
 import (
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
+	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -106,4 +110,32 @@ func StringToDate(date string, defaultVal time.Time) time.Time {
 // FormatDate Format date to string
 func FormatDate(date time.Time) string {
 	return date.Format("2006-01-02 15:04:05")
+}
+
+// GetHash Return hash of string
+func GetHash(data []byte) string {
+	h := sha1.New()
+	h.Write(data)
+	bs := h.Sum(nil)
+	return fmt.Sprintf("%x", bs)
+}
+
+// https://stackoverflow.com/a/30708914/2901140
+
+// IsDirEmpty Check if directory is empty
+func IsDirEmpty(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	// read in ONLY one file
+	_, err = f.Readdir(1)
+
+	// and if the file is EOF... well, the dir is empty.
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
