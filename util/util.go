@@ -1,6 +1,7 @@
 package util
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
@@ -138,4 +139,30 @@ func IsDirEmpty(name string) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+// IsDirectory Is path directory
+func IsDirectory(path string) (bool, error) {
+    fileInfo, err := os.Stat(path)
+    if err != nil{
+      return false, err
+    }
+    return fileInfo.IsDir(), err
+}
+
+// FileExists Is file exists
+func FileExists(filename string) bool {
+    info, err := os.Stat(filename)
+    if os.IsNotExist(err) {
+        return false
+    }
+    return !info.IsDir()
+}
+
+// GetAvatar Form gravatar url from email
+// d value may be following: 404, mp, identicon, monsterid, wavatar, retro, robohash, blank
+func GetAvatar(email string, d string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(strings.TrimSpace(strings.ToLower(email))))
+	return "https://gravatar.com/avatar/" + hex.EncodeToString(hasher.Sum(nil)) + "?d=" + d
 }
