@@ -89,7 +89,6 @@ func SetDefaults(appname string) {
 	// Common
 	SetDefaultOption("DEBUG", true)
 	SetDefaultOption("ADMIN_PASSWORD", "admin")
-	SetDefaultOption("FILE_STORE", "./" + appname)
 	SetDefaultOption("SESSION_KEY", "secret")
 
 	// LDAP
@@ -105,6 +104,21 @@ func SetDefaults(appname string) {
 	// oAuth2
 	SetDefaultOption("OAUTH2_LOGIN", false)
 	SetDefaultOption("OAUTH2_ENDPOINT", "https://my.nextgis.com")
+	SetDefaultOption("OSUTH2_SCOPE", "user_info.read")
+	SetDefaultOption("OAUTH2_TYPE", 1)
+	SetDefaultOption("OAUTH2_TOKEN_ENDPOINT", "https://my.nextgis.com/oauth2/token")
+	SetDefaultOption("OAUTH2_AUTH_ENDPOINT", "https://my.nextgis.com/oauth2/authorize")
+	SetDefaultOption("OAUTH2_USERINFO_ENDPOINT", "https://my.nextgis.com/api/v1/user_info")
+	SetDefaultOption("OAUTH2_INTROSPECTION_ENDPOINT", "https://my.nextgis.com/oauth2/introspect")
+	SetDefaultOption("OAUTH2_PROFILE_SUBJ_ATTR", "nextgis_guid")
+	SetDefaultOption("OAUTH2_PROFILE_KEYNAME_ATTR", "username")
+	SetDefaultOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "first_name")
+	SetDefaultOption("OAUTH2_PROFILE_LASTNAME_ATTR", "last_name")
+	SetDefaultOption("OAUTH2_USER_AUTOCREATE", true)
+	SetDefaultOption("OAUTH2_VALIDATE_KEY", "")
+
+	// Local
+	SetBoolOption("LOCAL_LOGIN", true)
 
 	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }

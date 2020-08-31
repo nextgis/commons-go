@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -160,9 +162,38 @@ func FileExists(filename string) bool {
 }
 
 // GetAvatar Form gravatar url from email
-// d value may be following: 404, mp, identicon, monsterid, wavatar, retro, robohash, blank
+// Value may be the following: 404, mp, identicon, monsterid, wavatar, retro, robohash, blank
 func GetAvatar(email string, d string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(strings.TrimSpace(strings.ToLower(email))))
 	return "https://gravatar.com/avatar/" + hex.EncodeToString(hasher.Sum(nil)) + "?d=" + d
+}
+
+// QueryParameterString Return query parameter or default value
+func QueryParameterString(gc *gin.Context, name, defaultVal string) string {
+	queryParameters := gc.Request.URL.Query()
+
+	str := defaultVal
+	if val, ok := queryParameters[name]; ok {
+		if len(val) > 0 {
+			str = val[0]
+		}
+	}
+	return str
+}
+
+// QueryParameterInt Return query parameter as Int or default value
+func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
+	queryParameters := gc.Request.URL.Query()
+
+	str := defaultVal
+	if val, ok := queryParameters[name]; ok {
+		if len(val) > 0 {
+			v, err := strconv.ParseInt(val[0], 0, 0)
+			if err != nil {
+				str = int(v)
+			}
+		}
+	}
+	return str
 }
