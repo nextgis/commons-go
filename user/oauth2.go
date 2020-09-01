@@ -128,14 +128,17 @@ func GetToken(code string) (*TokenJSON, error) {
 
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
+		fmt.Printf("Failed to prepare access token request. %s. Url: %s \n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to prepare access token request. %s", err.Error())
 	}
 	response, err := netClient.Do(req)
 
 	if err != nil {
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
 	}
 	if response.StatusCode != http.StatusOK {
+		fmt.Printf("Failed to get access token. Return status code is %d. Url: %s \n", response.StatusCode, url)
 		return nil, fmt.Errorf("Failed to get access token. Return status code is %d",
 			response.StatusCode)
 	}
@@ -143,11 +146,13 @@ func GetToken(code string) (*TokenJSON, error) {
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
 	}
 	var token TokenJSON
 	err = json.Unmarshal(bodyBytes, &token)
 	if err != nil {
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to parse access token. %s", err.Error())
 	}
 	return &token, nil
@@ -263,25 +268,30 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		fmt.Printf("Failed to prepare token introspection request. %s. Url %s\n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to prepare token introspection request. %s", err.Error())
 	}
 	response, err := netClient.Do(req)
 	if err != nil {
+		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
 	}
 	if response.StatusCode != http.StatusOK {
+		fmt.Printf("Failed to get token introspection. Return status code is %d. Url %s\n", response.StatusCode, url)
 		return nil, fmt.Errorf("Failed to get token introspection. Return status code is %d",
 			response.StatusCode)
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
+		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
 	}
 
 	var ir IntrospectResponse
 	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
+		fmt.Printf("Failed to parse token introspection. %s. Url %s\n", err.Error(), url)
 		return nil, fmt.Errorf("Failed to parse token introspection. %s", err.Error())
 	}
 	return &ir, nil
