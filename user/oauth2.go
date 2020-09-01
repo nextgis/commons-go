@@ -184,9 +184,9 @@ func unmarshalUserInfo(claims map[string]interface{}) *UserInfo {
 		if clientVal, ok := valM[context.StringOption("OAUTH2_CLIENT_ID")]; ok {
 			clientValM := clientVal.(map[string]interface{})
 			if roles, ok := clientValM["roles"]; ok {
-				rolesA := roles.([]string)
+				rolesA := roles.([]interface{})
 				for _, v := range rolesA {
-					ui.Roles = append(ui.Roles, v)
+					ui.Roles = append(ui.Roles, v.(string))
 				}
 			}
 		}
@@ -213,6 +213,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 		return context.StringOption("OAUTH2_VALIDATE_KEY"), nil
 	})
 	if err != nil {
+		sentry.CaptureException(err)
 		fmt.Println(err.Error())
 	}
 

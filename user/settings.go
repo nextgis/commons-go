@@ -67,7 +67,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "sub")
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "preferred_username")
 			context.SetStringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "first_name")
-			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "last_name")
+			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "family_name")
 		}
 	} else {
 		if len(oi.TokenEndpoint) > 0 {
