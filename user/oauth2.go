@@ -130,8 +130,14 @@ func GetToken(code string) (*TokenJSON, error) {
     data.Set("grant_type", "authorization_code")
     data.Set("code", code)
 	data.Set("redirect_uri", context.StringOption("OAUTH2_REDIRECT_URI"))
-	
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+
+	var response *http.Response
+	var err error
+	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
+		response, err = netClient.Post(context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?" + data.Encode(), "", nil)
+	} else {	
+		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+	}
 	if err != nil {
 		err := fmt.Errorf("Failed to get access token. %s", err.Error())
 		sentry.CaptureException(err)
@@ -281,8 +287,13 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
     data.Set("token", token.AccessToken)
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
-
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
+	var response *http.Response
+	var err error
+	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
+		response, err = netClient.Get(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT") + "?" + data.Encode())
+	} else {
+		response, err = netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
+	}
 	if err != nil {
 		err := fmt.Errorf("Failed to get token introspection. %s", err.Error())
 		sentry.CaptureException(err)

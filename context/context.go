@@ -198,7 +198,7 @@ func InitSentry(release string) gin.HandlerFunc {
 	if len(dsn) == 0 {
 		return nil
 	}
-	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: release + "+common-go@0.4.2",}); err != nil {
+	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: release}); err != nil {
 		fmt.Printf("Sentry initialization failed: %v\n", err)
 		return nil
 	}
