@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -118,27 +119,27 @@ func (oi *OAuth2Info) InitInfo() {
 
 // GetToken Get access token
 func GetToken(code string) (*TokenJSON, error) {
-	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?client_id=" +
-		context.StringOption("OAUTH2_CLIENT_ID") + "&client_secret=" +
-		context.StringOption("OAUTH2_CLIENT_SECRET") + "&grant_type=authorization_code&code=" +
-		code + "&redirect_uri=" + context.StringOption("OAUTH2_REDIRECT_URI")
 	var netClient = &http.Client{
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		fmt.Printf("Failed to prepare access token request. %s. Url: %s \n", err.Error(), url)
-		return nil, fmt.Errorf("Failed to prepare access token request. %s", err.Error())
-	}
-	response, err := netClient.Do(req)
+	data := url.Values{}
+    data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+    data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+    data.Set("grant_type", "authorization_code")
+    data.Set("code", code)
+	data.Set("redirect_uri", context.StringOption("OAUTH2_REDIRECT_URI"))
+	
+	fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?" + data.Encode()
+
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data) //.Do(req)
 
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
 		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
 	}
 	if response.StatusCode != http.StatusOK {
-		fmt.Printf("Failed to get access token. Return status code is %d. Url: %s \n", response.StatusCode, url)
+		fmt.Printf("Failed to get access token. Return status code is %d. Url: %s \n", response.StatusCode, fullURL)
 		return nil, fmt.Errorf("Failed to get access token. Return status code is %d",
 			response.StatusCode)
 	}
@@ -146,13 +147,13 @@ func GetToken(code string) (*TokenJSON, error) {
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
 		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
 	}
 	var token TokenJSON
 	err = json.Unmarshal(bodyBytes, &token)
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), url)
+		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
 		return nil, fmt.Errorf("Failed to parse access token. %s", err.Error())
 	}
 	return &token, nil
@@ -258,40 +259,43 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	var netClient = &http.Client{
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
-	url := fmt.Sprintf("%s?token=%s&client_id=%s&client_secret=%s",
-		context.StringOption("OAUTH2_USERINFO_ENDPOINT"),
-		token.AccessToken,
-		context.StringOption("OAUTH2_CLIENT_ID"),
-		context.StringOption("OAUTH2_CLIENT_SECRET"))
+
+	data := url.Values{}
+    data.Set("token", token.AccessToken)
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+
+	fulURL := context.StringOption("OAUTH2_USERINFO_ENDPOINT") + "?" + data.Encode()
+	
 	if gin.IsDebugging() {
-		fmt.Printf("Token introspection URL: %s\n", url)
+		fmt.Printf("Token introspection URL: %s\n", fulURL)
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", fulURL, nil)
 	if err != nil {
-		fmt.Printf("Failed to prepare token introspection request. %s. Url %s\n", err.Error(), url)
+		fmt.Printf("Failed to prepare token introspection request. %s. Url %s\n", err.Error(), fulURL)
 		return nil, fmt.Errorf("Failed to prepare token introspection request. %s", err.Error())
 	}
 	response, err := netClient.Do(req)
 	if err != nil {
-		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), url)
+		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), fulURL)
 		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
 	}
 	if response.StatusCode != http.StatusOK {
-		fmt.Printf("Failed to get token introspection. Return status code is %d. Url %s\n", response.StatusCode, url)
+		fmt.Printf("Failed to get token introspection. Return status code is %d. Url %s\n", response.StatusCode, fulURL)
 		return nil, fmt.Errorf("Failed to get token introspection. Return status code is %d",
 			response.StatusCode)
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), url)
+		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), fulURL)
 		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
 	}
 
 	var ir IntrospectResponse
 	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
-		fmt.Printf("Failed to parse token introspection. %s. Url %s\n", err.Error(), url)
+		fmt.Printf("Failed to parse token introspection. %s. Url %s\n", err.Error(), fulURL)
 		return nil, fmt.Errorf("Failed to parse token introspection. %s", err.Error())
 	}
 	return &ir, nil
