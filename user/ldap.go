@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/go-ldap/ldap/v3"
 
 	"github.com/nextgis/commons-go/context"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 )
 
 func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
@@ -32,11 +34,14 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 	)
 
 	if searchRequest == nil {
-		return nil, errors.New("Failed to create request")
+		err := errors.New("Failed to create request")
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	sr, err := conn.Search(searchRequest)
 	if err != nil {
+		sentry.CaptureException(err)
 		return nil, err
 	}
 
@@ -44,7 +49,9 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 		return sr.Entries[0], nil
 	}
 
-	return nil, errors.New("User not found or too many entries returned")
+	err = errors.New("User not found or too many entries returned")
+	sentry.CaptureException(err)
+	return nil, err
 }
 func createLDAPConnection() (*ldap.Conn, error) {
 	url := context.StringOption("LDAP_URL")
@@ -67,6 +74,7 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 		if certPath != "" && keyPath != "" {
 			cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 			if err != nil {
+				sentry.CaptureException(err)
 				return nil, err
 			}
 	
@@ -75,6 +83,7 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 		if !config.InsecureSkipVerify && caCertPath != "" {
 			caCert, err := ioutil.ReadFile(caCertPath)
 			if err != nil {
+				sentry.CaptureException(err)
 				return nil, err
 			}
 	
@@ -91,11 +100,13 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 
 		conn, err := ldap.Dial("tcp", url)
 		if err != nil {
+			sentry.CaptureException(err)
 			return nil, err
 		}
 
 		err = conn.StartTLS(config)
 		if err != nil {
+			sentry.CaptureException(err)
 			return nil, err
 		}
 
@@ -110,6 +121,7 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	connection, err := createLDAPConnection()
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 	defer connection.Close()
@@ -119,11 +131,13 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(readerDN, passwordDN)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 
@@ -131,11 +145,14 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(userDN.DN, password)
 	if err != nil {
+		sentry.CaptureException(err)
 		return errors.New("User is not authorized")
 	}
 
 	if len(userGroups) == 0 {
-		return errors.New("User not belongs to authorized group")
+		err = errors.New("User not belongs to authorized group")
+		sentry.CaptureException(err)
+		return err
 	}
 
 	return nil
@@ -144,6 +161,7 @@ func AuthenticateLDAPUser(username string, password string) error {
 func getLDAPUserGroups(username string) ([]string, error) {
 	connection, err := createLDAPConnection()
 	if err != nil {
+		sentry.CaptureException(err)
 		return nil, err
 	}
 	defer connection.Close()
@@ -153,11 +171,13 @@ func getLDAPUserGroups(username string) ([]string, error) {
 
 	err = connection.Bind(readerDN, passwordDN)
 	if err != nil {
+		sentry.CaptureException(err)
 		return nil, err
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
+		sentry.CaptureException(err)
 		return nil, err
 	}
 
@@ -190,6 +210,7 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 			groups = append(groups, entry.GetAttributeValue("cn"))
 		}
 	} else {
+		sentry.CaptureException(err)
 		fmt.Println(err.Error())
 	}
 
@@ -200,6 +221,7 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 func GetLDAPUserDetails(username string, password string) (string, string, error) {
 	connection, err := createLDAPConnection()
 	if err != nil {
+		sentry.CaptureException(err)
 		return "", "", err
 	}
 	defer connection.Close()
@@ -208,11 +230,13 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 	passwordDN := context.StringOption("LDAP_DN_PWD")
 
 	if errb := connection.Bind(readerDN, passwordDN); errb != nil {
+		sentry.CaptureException(errb)
 		return "", "", errb
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
+		sentry.CaptureException(err)
 		return "", "", err
 	}
 
@@ -222,11 +246,14 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 
 	// Check password
 	if errb := connection.Bind(userDN.DN, password); errb != nil {
+		sentry.CaptureException(errb)
 		return "", "", errb
 	}
 
 	if len(userGroups) < 1 {
-		return "", "", errors.New("User not belongs to authorized group")
+		err = errors.New("User not belongs to authorized group")
+		sentry.CaptureException(err)
+		return "", "", err
 	}
 
 	fullName := userDN.GetAttributeValue("cn")
@@ -276,6 +303,9 @@ func (li *LdapInfo) InitInfo() {
 func TestLDAPConnection(gc *gin.Context) {
 	var form LdapInfo
 	if err := gc.ShouldBind(&form); err != nil {
+		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
+			hub.CaptureException(err)
+		}
 		gc.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -283,6 +313,9 @@ func TestLDAPConnection(gc *gin.Context) {
 	connection, err := createLDAPConnectionInt(form.URL, form.TLS, 
 		form.TLSNoVerify, form.TLSCertPath, form.TLSKeyPath, form.TLSCaCertPath)
 	if err != nil {
+		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
+			hub.CaptureException(err)
+		}
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
@@ -290,6 +323,9 @@ func TestLDAPConnection(gc *gin.Context) {
 
 	err = connection.Bind(form.DN, form.DNPassword)
 	if err != nil {
+		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
+			hub.CaptureException(err)
+		}
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}

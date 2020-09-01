@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/location"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -20,7 +22,6 @@ var ContextKey = ""
 func StringOption(key string) string {
 	return viper.GetString(key)
 }
-
 
 // BoolOption return boolean settings option
 func BoolOption(key string) bool {
@@ -73,9 +74,9 @@ func SetDefaultOption(key string, value interface{}) {
 
 // CreateContext Will add the application context to the context
 func CreateContext(value interface{}) gin.HandlerFunc {
-	return func(cg *gin.Context) {
-		cg.Set(ContextKey, value)
-		cg.Next()
+	return func(gc *gin.Context) {
+		gc.Set(ContextKey, value)
+		gc.Next()
 	}
 }
 
@@ -141,11 +142,26 @@ func CreateSession(appname string) gin.HandlerFunc {
 }
 
 // DefaultSession is shortcut to get session
-func DefaultSession(c *gin.Context) sessions.Session {
-	return c.MustGet(sessions.DefaultKey).(sessions.Session)
+func DefaultSession(gc *gin.Context) sessions.Session {
+	return gc.MustGet(sessions.DefaultKey).(sessions.Session)
 }
 
-// GetBaseURL return base usr as scheme + host + port
+// GetSentryHub Returns sentry hub from gin context
+func GetSentryHub(gc *gin.Context) *sentry.Hub {
+	return sentrygin.GetHubFromContext(gc)
+}
+
+// CaptureMessage Capture message for sentry
+func CaptureMessage(msg string) {
+	sentry.CaptureMessage(msg)
+}
+
+// CaptureException Capture error for sentry 
+func CaptureException(err error) {
+	sentry.CaptureException(err)
+}
+
+// GetBaseURL return base URL as scheme + host + port
 func GetBaseURL(gc *gin.Context) string {
 	url := location.Get(gc)
 	return url.Scheme + "://" + url.Host
@@ -174,4 +190,18 @@ func SetupConfig(appname string) {
 	if err := viper.WriteConfigAs(filepath.Join(configPath, "config.yml")); err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+// InitSentry Initialize sentry
+func InitSentry() gin.HandlerFunc {
+	dsn := StringOption("SENTRY_DSN")
+	if len(dsn) == 0 {
+		return nil
+	}
+	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn}); err != nil {
+		fmt.Printf("Sentry initialization failed: %v\n", err)
+		return nil
+	}
+
+	return sentrygin.New(sentrygin.Options{Repanic: true})
 }

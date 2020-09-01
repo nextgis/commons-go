@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/nextgis/commons-go/context"
 )
@@ -130,31 +131,36 @@ func GetToken(code string) (*TokenJSON, error) {
     data.Set("code", code)
 	data.Set("redirect_uri", context.StringOption("OAUTH2_REDIRECT_URI"))
 	
-	fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?" + data.Encode()
-
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data) //.Do(req)
-
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
-		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
+		err := fmt.Errorf("Failed to get access token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		fmt.Printf("Failed to get access token. Return status code is %d. Url: %s \n", response.StatusCode, fullURL)
-		return nil, fmt.Errorf("Failed to get access token. Return status code is %d",
+		err := fmt.Errorf("Failed to get access token. Return status code is %d",
 			response.StatusCode)
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
-		return nil, fmt.Errorf("Failed to get access token. %s", err.Error())
+		err := fmt.Errorf("Failed to get access token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 	var token TokenJSON
 	err = json.Unmarshal(bodyBytes, &token)
 	if err != nil {
-		fmt.Printf("Failed to get access token. %s. Url: %s \n", err.Error(), fullURL)
-		return nil, fmt.Errorf("Failed to parse access token. %s", err.Error())
+		err := fmt.Errorf("Failed to parse access token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 	return &token, nil
 }
@@ -227,28 +233,38 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_USERINFO_ENDPOINT"), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to prepare user_info request. %s", err.Error())
+		err := fmt.Errorf("Failed to prepare user_info request. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
 
 	response, err := netClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to get user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get user_info. Return status code is %d",
+		err := fmt.Errorf("Failed to get user_info. Return status code is %d",
 			response.StatusCode)
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to get user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	claims := make(map[string]interface{})
 	err = json.Unmarshal(bodyBytes, &claims)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to parse user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	return unmarshalUserInfo(claims), nil
@@ -265,38 +281,34 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 
-	fulURL := context.StringOption("OAUTH2_USERINFO_ENDPOINT") + "?" + data.Encode()
-	
-	if gin.IsDebugging() {
-		fmt.Printf("Token introspection URL: %s\n", fulURL)
-	}
-	req, err := http.NewRequest("GET", fulURL, nil)
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
 	if err != nil {
-		fmt.Printf("Failed to prepare token introspection request. %s. Url %s\n", err.Error(), fulURL)
-		return nil, fmt.Errorf("Failed to prepare token introspection request. %s", err.Error())
-	}
-	response, err := netClient.Do(req)
-	if err != nil {
-		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), fulURL)
-		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
+		err := fmt.Errorf("Failed to get token introspection. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		fmt.Printf("Failed to get token introspection. Return status code is %d. Url %s\n", response.StatusCode, fulURL)
-		return nil, fmt.Errorf("Failed to get token introspection. Return status code is %d",
-			response.StatusCode)
+		err := fmt.Errorf("Failed to get token introspection. Return status code is %d", response.StatusCode)
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		fmt.Printf("Failed to get token introspection. %s. Url %s\n", err.Error(), fulURL)
-		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
+		err := fmt.Errorf("Failed to get token introspection. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 
 	var ir IntrospectResponse
 	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
-		fmt.Printf("Failed to parse token introspection. %s. Url %s\n", err.Error(), fulURL)
-		return nil, fmt.Errorf("Failed to parse token introspection. %s", err.Error())
+		err := fmt.Errorf("Failed to parse token introspection. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
 	}
 	return &ir, nil
 }
@@ -308,28 +320,37 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to prepare support_info request. %s", err.Error())
+		err := fmt.Errorf("Failed to prepare support_info request. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
 
 	response, err := netClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get support_info. %s", err.Error())
+		err := fmt.Errorf("Failed to get support_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get support_info. Return status code is %d",
+		err := fmt.Errorf("Failed to get support_info. Return status code is %d",
 			response.StatusCode)
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
+		sentry.CaptureException(err)
 		return nil, fmt.Errorf("Failed to get support_info. %s", err.Error())
 	}
 
 	var si NGSupportInfo
 	err = json.Unmarshal(bodyBytes, &si)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse support_info. %s", err.Error())
+		err := fmt.Errorf("Failed to parse support_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	return &si, nil
 }
@@ -342,7 +363,9 @@ type ngUserSupportResult struct {
 func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 
 	if context.IntOption("OAUTH2_TYPE") != NextGISAuthType {
-		return nil, fmt.Errorf("Only support with OAuth2 type %d", NextGISAuthType)
+		err := fmt.Errorf("Only support with OAuth2 type %d", NextGISAuthType)
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	var netClient = &http.Client{
@@ -353,26 +376,36 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		"?client_id="+context.StringOption("OAUTH2_CLIENT_ID")+
 		"&client_secret="+context.StringOption("OAUTH2_CLIENT_SECRET"), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to prepare integration/user_info request. %s", err.Error())
+		err := fmt.Errorf("Failed to prepare integration/user_info request. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	response, err := netClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get integration/user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to get integration/user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get integration/user_info. Return status code is %d",
+		err := fmt.Errorf("Failed to get integration/user_info. Return status code is %d",
 			response.StatusCode)
+		sentry.CaptureException(err)
+		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to get user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	var usr ngUserSupportResult
 	err = json.Unmarshal(bodyBytes, &usr)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse integration/user_info. %s", err.Error())
+		err := fmt.Errorf("Failed to parse integration/user_info. %s", err.Error())
+		sentry.CaptureException(err)
+		return nil, err
 	}
 
 	if len(usr.Result) < 1 {
