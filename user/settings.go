@@ -29,12 +29,6 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 		context.SetStringOption("OAUTH2_REDIRECT_URI", oi.RedirectURI)
 	}
 
-	if len(oi.Scope) > 0 {
-		context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
-	} else {
-		context.SetStringOption("OAUTH2_SCOPE", "")
-	}
-
 	context.SetIntOption("OAUTH2_TYPE", oi.Type)
 
 	if oi.Type == NextGISAuthType {
@@ -52,6 +46,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "username")
 			context.SetStringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "first_name")
 			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "last_name")
+			context.SetStringOption("OAUTH2_SCOPE", "user_info.read")
 		}	
 	} else if oi.Type == KeycloakAuthType {
 		if len(oi.Endpoint) > 0 {
@@ -68,6 +63,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "preferred_username")
 			context.SetStringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "first_name")
 			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "family_name")
+			context.SetStringOption("OAUTH2_SCOPE", "")
 		}
 	} else {
 		if len(oi.TokenEndpoint) > 0 {
@@ -94,6 +90,11 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 		}
 		if len(oi.LastnameAttribute) > 0 {
 			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", oi.LastnameAttribute)
+		}
+		if len(oi.Scope) > 0 {
+			context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
+		} else {
+			context.SetStringOption("OAUTH2_SCOPE", "")
 		}
 	}
 }

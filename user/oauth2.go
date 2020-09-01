@@ -134,8 +134,22 @@ func GetToken(code string) (*TokenJSON, error) {
 	var response *http.Response
 	var err error
 	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
-		response, err = netClient.Post(context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?" + data.Encode(), "", nil)
+		fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "?" + data.Encode()
+		if gin.IsDebugging() {
+			fmt.Println(fullURL)
+		}
+		req, err := http.NewRequest("POST", fullURL, nil)
+		if err != nil {
+			err := fmt.Errorf("Failed to prepare access token request. %s", err.Error())
+			sentry.CaptureException(err)
+			fmt.Println(err.Error())
+			return nil, err
+		}
+		response, err = netClient.Do(req)
 	} else {	
+		if gin.IsDebugging() {
+			fmt.Println("Keycloak")
+		}
 		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	}
 	if err != nil {
