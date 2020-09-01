@@ -52,12 +52,13 @@ type NGSupportInfo struct {
 
 // See https://github.com/nextgis/nextgisid/wiki/Introspection
 
-// NGTokenInfo NextGIS token information
-type NGTokenInfo struct {
-	Active   bool   `json:"active"`
-	Scopes   string `json:"scope"`
-	Username string `json:"username"`
-	NGID     string `json:"nextgis_guid"`
+// IntrospectResponse Introspect response information
+type IntrospectResponse struct {
+	Active bool `json:"active"`
+	Exp    int  `json:"exp"`
+	// Scopes   string `json:"scope"`
+	// Username string `json:"username"`
+	// NGID     string `json:"nextgis_guid"`
 }
 
 // NGUserSupportInfo NextGIS user and support information
@@ -90,6 +91,8 @@ type OAuth2Info struct {
 	KeynameAttribute      string `form:"keyname_attr" json:"keyname_attr"`                     // OAUTH2_PROFILE_KEYNAME_ATTR
 	FirstnameAttribute    string `form:"firstname_attr" json:"firstname_attr"`                 // OAUTH2_PROFILE_FIRSTNAME_ATTR
 	LastnameAttribute     string `form:"lastname_attr" json:"lastname_attr"`                   // OAUTH2_PROFILE_LASTNAME_ATTR
+	CreateGroups          bool   `form:"create_groups" json:"create_groups"`                   // OAUTH2_CREATE_GROUPS
+	UpdateGroups          bool   `form:"update_groups" json:"update_groups"`                   // OAUTH2_UPDATE_GROUPS
 }
 
 // InitInfo Init OAuth2 Information
@@ -109,6 +112,8 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.KeynameAttribute = context.StringOption("OAUTH2_PROFILE_KEYNAME_ATTR")
 	oi.FirstnameAttribute = context.StringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR")
 	oi.LastnameAttribute = context.StringOption("OAUTH2_PROFILE_LASTNAME_ATTR")
+	oi.CreateGroups = context.BoolOption("OAUTH2_CREATE_GROUPS")
+	oi.UpdateGroups = context.BoolOption("OAUTH2_UPDATE_GROUPS")
 }
 
 // GetToken Get access token
@@ -245,7 +250,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 }
 
 // TokenIntrospection Token introspection
-func TokenIntrospection(token *TokenJSON) (*NGTokenInfo, error) {
+func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	var netClient = &http.Client{
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
@@ -275,12 +280,12 @@ func TokenIntrospection(token *TokenJSON) (*NGTokenInfo, error) {
 		return nil, fmt.Errorf("Failed to get token introspection. %s", err.Error())
 	}
 
-	var ti NGTokenInfo
-	err = json.Unmarshal(bodyBytes, &ti)
+	var ir IntrospectResponse
+	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse token introspection. %s", err.Error())
 	}
-	return &ti, nil
+	return &ir, nil
 }
 
 // GetSupportInfo Get support information
@@ -381,7 +386,7 @@ func OAuth2Options(gc *gin.Context) {
 		ClientID:      context.StringOption("OAUTH2_CLIENT_ID"),
 		RedirectURI:   context.StringOption("OAUTH2_REDIRECT_URI"),
 		AltLogins:     context.BoolOption("LDAP_LOGIN") || context.BoolOption("LOCAL_LOGIN"),
-		Scope:         context.StringOption("OSUTH2_SCOPE"),
+		Scope:         context.StringOption("OAUTH2_SCOPE"),
 	}
 	gc.JSON(http.StatusOK, options)
 }

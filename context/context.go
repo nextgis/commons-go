@@ -104,7 +104,7 @@ func SetDefaults(appname string) {
 	// oAuth2
 	SetDefaultOption("OAUTH2_LOGIN", false)
 	SetDefaultOption("OAUTH2_ENDPOINT", "https://my.nextgis.com")
-	SetDefaultOption("OSUTH2_SCOPE", "user_info.read")
+	SetDefaultOption("OAUTH2_SCOPE", "user_info.read")
 	SetDefaultOption("OAUTH2_TYPE", 1)
 	SetDefaultOption("OAUTH2_TOKEN_ENDPOINT", "https://my.nextgis.com/oauth2/token")
 	SetDefaultOption("OAUTH2_AUTH_ENDPOINT", "https://my.nextgis.com/oauth2/authorize")
@@ -116,6 +116,9 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_PROFILE_LASTNAME_ATTR", "last_name")
 	SetDefaultOption("OAUTH2_USER_AUTOCREATE", true)
 	SetDefaultOption("OAUTH2_VALIDATE_KEY", "")
+	SetDefaultOption("OAUTH2_CREATE_GROUPS", false)
+	SetDefaultOption("OAUTH2_UPDATE_GROUPS", false)
+	SetDefaultOption("OAUTH2_TOKEN_CACHE_TTL", 3600)
 
 	// Local
 	SetBoolOption("LOCAL_LOGIN", true)

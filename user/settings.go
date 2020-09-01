@@ -14,6 +14,8 @@ func UpdateLocalSettings(li *LocalAuthInfo) {
 // UpdateOAuth2Settings Update oauth2 setting
 func UpdateOAuth2Settings(oi *OAuth2Info) {
 	context.SetBoolOption("OAUTH2_LOGIN", oi.Enable)
+	context.SetBoolOption("OAUTH2_CREATE_GROUPS", oi.CreateGroups)
+	context.SetBoolOption("OAUTH2_UPDATE_GROUPS", oi.UpdateGroups)
 	
 	if len(oi.ClientID) > 0 {
 		context.SetStringOption("OAUTH2_CLIENT_ID", oi.ClientID)
