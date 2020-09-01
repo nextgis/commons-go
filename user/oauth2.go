@@ -54,11 +54,11 @@ type NGSupportInfo struct {
 
 // IntrospectResponse Introspect response information
 type IntrospectResponse struct {
-	Active bool `json:"active"`
-	Exp    int  `json:"exp"`
-	// Scopes   string `json:"scope"`
-	// Username string `json:"username"`
-	// NGID     string `json:"nextgis_guid"`
+	Active   bool   `json:"active" binding:"required"`
+	Exp      int64  `json:"exp"`
+	Scopes   string `json:"scope"`
+	Username string `json:"username"`
+	NGID     string `json:"nextgis_guid"`
 }
 
 // NGUserSupportInfo NextGIS user and support information
@@ -190,7 +190,6 @@ func unmarshalUserInfo(claims map[string]interface{}) *UserInfo {
 	if val, ok := claims["email_confirmed"]; ok {
 		ui.EmailConfirmed = val.(bool)
 	}
-
 	return &ui
 }
 
