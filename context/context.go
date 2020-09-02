@@ -122,7 +122,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_TOKEN_CACHE_TTL", 3600)
 
 	// Local
-	SetBoolOption("LOCAL_LOGIN", true)
+	SetDefaultOption("LOCAL_LOGIN", true)
 
 	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }
