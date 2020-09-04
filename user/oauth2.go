@@ -462,3 +462,57 @@ func OAuth2Options(gc *gin.Context) {
 	}
 	gc.JSON(http.StatusOK, options)
 }
+
+// RefreshToken Refresh access token
+func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
+	var netClient = &http.Client{
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+    data.Set("refresh_token", token.RefreshToken)
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+
+	fullScope := context.StringOption("OAUTH2_SCOPE")
+	if len(scope) > 0 {
+		fullScope += " " + scope
+	}
+
+	if len(fullScope) > 0 {
+		data.Set("scope", fullScope)
+	}
+
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
+
+	if err != nil {
+		err := fmt.Errorf("Failed to refresh token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	if response.StatusCode != http.StatusOK {
+		err := fmt.Errorf("Failed to refresh token. Return status code is %d", response.StatusCode)
+		sentry.CaptureException(err)
+		return nil, err
+	}
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		err := fmt.Errorf("Failed to refresh token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	var t TokenJSON
+	err = json.Unmarshal(bodyBytes, &t)
+	if err != nil {
+		err := fmt.Errorf("Failed to parse token. %s", err.Error())
+		sentry.CaptureException(err)
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	return &t, nil
+
+}
