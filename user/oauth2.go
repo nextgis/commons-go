@@ -12,6 +12,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/nextgis/commons-go/context"
+	"github.com/gin-contrib/sessions"
 )
 
 const (
@@ -29,6 +30,23 @@ type TokenJSON struct {
 	TokenType    string `json:"token_type"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+}
+
+// ToSession Save token to session
+func (token *TokenJSON)ToSession(session sessions.Session) sessions.Session {
+	session.Set("access_token", token.AccessToken)
+	session.Set("refresh_token", token.RefreshToken)
+	session.Set("token_type", token.TokenType)
+	session.Set("expires_in", token.ExpiresIn)
+	return session
+}
+
+// FromSession Set token from session
+func (token *TokenJSON)FromSession(session sessions.Session) {
+	token.AccessToken = session.Get("access_token").(string)
+	token.RefreshToken = session.Get("refresh_token").(string)
+	token.ExpiresIn = session.Get("expires_in").(int)
+	token.TokenType = session.Get("token_type").(string)
 }
 
 // UserInfo User information
