@@ -165,9 +165,6 @@ func GetToken(code string) (*TokenJSON, error) {
 		}
 		response, err = netClient.Do(req)
 	} else {	
-		if gin.IsDebugging() {
-			fmt.Println("Keycloak")
-		}
 		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	}
 	if err != nil {
@@ -501,7 +498,25 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		data.Set("scope", fullScope)
 	}
 
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
+	var response *http.Response
+	var err error
+	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
+		fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "/?" + data.Encode()
+		if gin.IsDebugging() {
+			fmt.Println(fullURL)
+		}
+		req, err := http.NewRequest("POST", fullURL, nil)
+		if err != nil {
+			err := fmt.Errorf("Failed to prepare refresh token request. %s", err.Error())
+			sentry.CaptureException(err)
+			fmt.Println(err.Error())
+			return nil, err
+		}
+		response, err = netClient.Do(req)
+	} else {	
+		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+	}
+
 
 	if err != nil {
 		err := fmt.Errorf("Failed to refresh token. %s", err.Error())
