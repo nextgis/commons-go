@@ -152,13 +152,29 @@ func GetSentryHub(gc *gin.Context) *sentry.Hub {
 }
 
 // CaptureMessage Capture message for sentry
-func CaptureMessage(msg string) {
+func CaptureMessage(msg string, logMessage bool) {
 	sentry.CaptureMessage(msg)
+	if logMessage {
+		fmt.Println(msg)
+	}
 }
 
 // CaptureException Capture error for sentry 
-func CaptureException(err error) {
+func CaptureException(err error, logMessage bool) {
 	sentry.CaptureException(err)
+	if logMessage {
+		fmt.Println(err.Error())
+	}
+}
+
+// CaptureExceptionFromGin Capture error from gin for sentry
+func CaptureExceptionFromGin(gc *gin.Context, err error, logMessage bool) {
+	if hub := sentrygin.GetHubFromContext(gc); hub != nil {
+		hub.CaptureException(err)
+	}
+	if logMessage {
+		fmt.Println(err.Error())
+	}
 }
 
 // GetBaseURL return base URL as scheme + host + port
@@ -188,7 +204,7 @@ func SetupConfig(appname string) {
 	os.MkdirAll(viper.GetString("FILE_STORE"), 0755)
 
 	if err := viper.WriteConfigAs(filepath.Join(configPath, "config.yml")); err != nil {
-		fmt.Println(err.Error())
+		CaptureException(err, true)
 	}
 }
 
@@ -199,7 +215,7 @@ func InitSentry(release string) gin.HandlerFunc {
 		return nil
 	}
 	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: release}); err != nil {
-		fmt.Printf("Sentry initialization failed: %v\n", err)
+		CaptureException(fmt.Errorf("Sentry initialization failed: %s", err.Error(), true)
 		return nil
 	}
 

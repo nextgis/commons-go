@@ -35,13 +35,11 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 
 	if searchRequest == nil {
 		err := errors.New("Failed to create request")
-		sentry.CaptureException(err)
 		return nil, err
 	}
 
 	sr, err := conn.Search(searchRequest)
 	if err != nil {
-		sentry.CaptureException(err)
 		return nil, err
 	}
 
@@ -50,7 +48,6 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 	}
 
 	err = errors.New("User not found or too many entries returned")
-	sentry.CaptureException(err)
 	return nil, err
 }
 func createLDAPConnection() (*ldap.Conn, error) {
@@ -74,7 +71,6 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 		if certPath != "" && keyPath != "" {
 			cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 			if err != nil {
-				sentry.CaptureException(err)
 				return nil, err
 			}
 	
@@ -83,7 +79,6 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 		if !config.InsecureSkipVerify && caCertPath != "" {
 			caCert, err := ioutil.ReadFile(caCertPath)
 			if err != nil {
-				sentry.CaptureException(err)
 				return nil, err
 			}
 	
@@ -100,13 +95,11 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 
 		conn, err := ldap.Dial("tcp", url)
 		if err != nil {
-			sentry.CaptureException(err)
 			return nil, err
 		}
 
 		err = conn.StartTLS(config)
 		if err != nil {
-			sentry.CaptureException(err)
 			return nil, err
 		}
 
@@ -131,13 +124,13 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(readerDN, passwordDN)
 	if err != nil {
-		sentry.CaptureException(err)
+		context.CaptureException(err, true)
 		return err
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
-		sentry.CaptureException(err)
+		context.CaptureException(err, true)
 		return err
 	}
 
@@ -145,13 +138,14 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(userDN.DN, password)
 	if err != nil {
-		sentry.CaptureException(err)
-		return errors.New("User is not authorized")
+		newErr := fmt.Errorf("User is not authorized. %s", err.Error())
+		context.CaptureException(newErr, true)
+		return newErr
 	}
 
 	if len(userGroups) == 0 {
 		err = errors.New("User not belongs to authorized group")
-		sentry.CaptureException(err)
+		context.CaptureException(err, true)
 		return err
 	}
 
@@ -161,7 +155,6 @@ func AuthenticateLDAPUser(username string, password string) error {
 func getLDAPUserGroups(username string) ([]string, error) {
 	connection, err := createLDAPConnection()
 	if err != nil {
-		sentry.CaptureException(err)
 		return nil, err
 	}
 	defer connection.Close()
@@ -171,13 +164,11 @@ func getLDAPUserGroups(username string) ([]string, error) {
 
 	err = connection.Bind(readerDN, passwordDN)
 	if err != nil {
-		sentry.CaptureException(err)
 		return nil, err
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
-		sentry.CaptureException(err)
 		return nil, err
 	}
 
@@ -210,8 +201,7 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 			groups = append(groups, entry.GetAttributeValue("cn"))
 		}
 	} else {
-		sentry.CaptureException(err)
-		fmt.Println(err.Error())
+		context.CaptureException(err, true)
 	}
 
 	return groups
@@ -230,13 +220,14 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 	passwordDN := context.StringOption("LDAP_DN_PWD")
 
 	if errb := connection.Bind(readerDN, passwordDN); errb != nil {
-		sentry.CaptureException(errb)
+		context.CaptureException(errb, true)
 		return "", "", errb
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
-		sentry.CaptureException(err)
+		err := fmt.Errorf("User '%s'. Error: %s", username, err.Error())
+		context.CaptureException(err, true)
 		return "", "", err
 	}
 
@@ -246,13 +237,13 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 
 	// Check password
 	if errb := connection.Bind(userDN.DN, password); errb != nil {
-		sentry.CaptureException(errb)
+		context.CaptureException(errb, true)
 		return "", "", errb
 	}
 
 	if len(userGroups) < 1 {
 		err = errors.New("User not belongs to authorized group")
-		sentry.CaptureException(err)
+		context.CaptureException(err, true)
 		return "", "", err
 	}
 
@@ -303,19 +294,15 @@ func (li *LdapInfo) InitInfo() {
 func TestLDAPConnection(gc *gin.Context) {
 	var form LdapInfo
 	if err := gc.ShouldBind(&form); err != nil {
-		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
-			hub.CaptureException(err)
-		}
+		context.CaptureExceptionFromGin(gc, err, true)
 		gc.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	connection, err := createLDAPConnectionInt(form.URL, form.TLS, 
 		form.TLSNoVerify, form.TLSCertPath, form.TLSKeyPath, form.TLSCaCertPath)
-	if err != nil {
-		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
-			hub.CaptureException(err)
-		}
+	if err != nil {		
+		context.CaptureExceptionFromGin(gc, err, true)
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
@@ -323,9 +310,7 @@ func TestLDAPConnection(gc *gin.Context) {
 
 	err = connection.Bind(form.DN, form.DNPassword)
 	if err != nil {
-		if hub := sentrygin.GetHubFromContext(gc); hub != nil {
-			hub.CaptureException(err)
-		}
+		context.CaptureExceptionFromGin(gc, err, true)
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
