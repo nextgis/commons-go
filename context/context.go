@@ -8,7 +8,7 @@
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
  * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
- * 
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -17,12 +17,10 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 
 package context
 
@@ -36,7 +34,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/location"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -156,7 +154,7 @@ func SetDefaults(appname string) {
 // CreateSession Create new session and return handler.
 func CreateSession(appname string) gin.HandlerFunc {
 	secretKey := StringOption("SESSION_KEY")
-	store := cookie.NewStore([]byte(secretKey))
+	store := memstore.NewStore([]byte(secretKey))
 	store.Options(sessions.Options{
 		MaxAge: 3600*72,
 		Path:   "/",
