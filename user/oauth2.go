@@ -547,8 +547,8 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		return nil, err
 	}
 	if response.StatusCode != http.StatusOK {
-		// err := fmt.Errorf("Failed to refresh token. Return status code is %d", response.StatusCode)
-		// sentry.CaptureException(err)
+		err := fmt.Errorf("Failed to refresh token. Return status code is %d", response.StatusCode)
+		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
