@@ -414,10 +414,6 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	return &si, nil
 }
 
-type ngUserSupportResult struct {
-	Result []NGUserSupportInfo `json:"result"`
-}
-
 // GetUserSuppotInfo Get user and support information
 func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 
@@ -459,7 +455,7 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 
-	var usr ngUserSupportResult
+	var usr NGUserSupportInfo
 	err = json.Unmarshal(bodyBytes, &usr)
 	if err != nil {
 		err := fmt.Errorf("Failed to parse integration/user_info. %s", err.Error())
@@ -467,13 +463,7 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 
-	if len(usr.Result) < 1 {
-		err := fmt.Errorf("Empty result on integration/user_info request")
-		context.CaptureException(err, true)
-		return nil, err
-	}
-
-	return &usr.Result[0], nil
+	return &usr, nil
 }
 
 type oauth2Options struct {
