@@ -236,11 +236,15 @@ func SetupConfig(appname string) {
 func InitSentry(release string) gin.HandlerFunc {
 	dsn := StringOption("SENTRY_DSN")
 	if len(dsn) == 0 {
-		return nil
+		return func(gc *gin.Context) {
+			gc.Next()
+		}
 	}
 	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: release}); err != nil {
 		CaptureException(fmt.Errorf("Sentry initialization failed: %s", err.Error()), true)
-		return nil
+		return func(gc *gin.Context) {
+			gc.Next()
+		}
 	}
 
 	return sentrygin.New(sentrygin.Options{Repanic: true})
