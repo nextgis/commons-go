@@ -61,6 +61,6 @@ func RemoveFromTokenCache(key interface{}) {
 }
 
 // AddToTokenCache Add value to token cache
-func AddToTokenCache(key, value TokenInfo) (bool) {
+func AddToTokenCache(key interface{}, value TokenInfo) (bool) {
 	return tokenCache.Add(key, value)
 }
