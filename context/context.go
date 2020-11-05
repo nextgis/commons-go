@@ -115,6 +115,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("DEBUG", true)
 	SetDefaultOption("ADMIN_PASSWORD", "admin")
 	SetDefaultOption("SESSION_KEY", "secret")
+	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
 
 	// LDAP
 	SetDefaultOption("LDAP_LOGIN", false)
@@ -154,6 +155,7 @@ func SetDefaults(appname string) {
 // CreateSession Create new session and return handler.
 func CreateSession(appname string) gin.HandlerFunc {
 	secretKey := StringOption("SESSION_KEY")
+	// TODO: https://github.com/wader/gormstore/blob/master/gormstore.go
 	store := memstore.NewStore([]byte(secretKey))
 	store.Options(sessions.Options{
 		MaxAge: 3600*72,
