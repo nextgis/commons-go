@@ -43,14 +43,16 @@ func InitTokenCache() error {
 	return err
 }
  
-type tokenInfo struct {
-	exp    time.Time
-	userID uint
+// TokenInfo token info
+type TokenInfo struct {
+	Exp    time.Time
+	UserID uint
 }
 
 // GetFromTokenCache Get value from token cache
-func GetFromTokenCache(key interface{}) (value interface{}, ok bool)  {
-	return tokenCache.Get(key)
+func GetFromTokenCache(key interface{}) (value TokenInfo, ok bool)  {
+	val, ok := tokenCache.Get(key)
+	return val.(TokenInfo), ok
 }
 
 // RemoveFromTokenCache Remove token from cache
@@ -59,6 +61,6 @@ func RemoveFromTokenCache(key interface{}) {
 }
 
 // AddToTokenCache Add value to token cache
-func AddToTokenCache(key, value interface{}) (bool) {
+func AddToTokenCache(key, value TokenInfo) (bool) {
 	return tokenCache.Add(key, value)
 }
