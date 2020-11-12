@@ -116,6 +116,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("ADMIN_PASSWORD", "admin")
 	SetDefaultOption("SESSION_KEY", "secret")
 	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
+	SetDefaultOption("TIMEOUT", 180) // Timeout to get remote data
 
 	// LDAP
 	SetDefaultOption("LDAP_LOGIN", false)

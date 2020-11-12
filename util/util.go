@@ -8,7 +8,7 @@
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
  * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
- * 
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -17,12 +17,10 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 
 package util
 
@@ -33,12 +31,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nextgis/commons-go/context"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -222,4 +223,42 @@ func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 		}
 	}
 	return str
+}
+
+// GetRemoteBytes Get remote data with timeout
+func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
+	// https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
+	if gin.IsDebugging() {
+		fmt.Printf("Get remote url: %s\n", url)
+	}
+	var netClient = &http.Client{
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	if len(username) > 0 {
+		req.SetBasicAuth(username, password)
+	}
+	response, err := netClient.Do(req)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	// Sometimes get 204
+	if response.StatusCode > 399 {
+		return nil, response.StatusCode, fmt.Errorf("Return status code is %d", response.StatusCode)
+	}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+
+	if err != nil {
+		return nil, response.StatusCode, err
+	}
+
+	return bodyBytes, http.StatusOK, nil
 }
