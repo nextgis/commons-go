@@ -41,6 +41,8 @@ import (
 
 // ContextKey Context key value
 var ContextKey = ""
+// FileStorePath Path to file store
+var FileStorePath = ""
 
 // StringOption return string settings option
 func StringOption(key string) string {
@@ -217,9 +219,11 @@ func SetupConfig(appname string) {
 
 	configPath := viper.GetString("FILE_STORE")
 
-	if len(configPath) < 1 {
+	if len(configPath) == 0 {
 		configPath = "./" + appname
-	}
+	} 
+	// Create file store
+	os.MkdirAll(configPath, 0755)
 	viper.AddConfigPath(configPath)
 	viper.SetConfigType("yaml")
 
@@ -227,12 +231,11 @@ func SetupConfig(appname string) {
 		fmt.Println("Config file read error: " + err.Error())
 	}
 
-	// Create file store
-	os.MkdirAll(viper.GetString("FILE_STORE"), 0755)
-
 	if err := viper.WriteConfigAs(filepath.Join(configPath, "config.yml")); err != nil {
 		CaptureException(err, true)
 	}
+
+	FileStorePath = configPath
 }
 
 // InitSentry Initialize sentry
