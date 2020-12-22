@@ -53,7 +53,7 @@ type TokenInfo struct {
 func GetFromTokenCache(key interface{}) (value TokenInfo, ok bool)  {
 	val, ok := tokenCache.Get(key)
 	if !ok || val == nil {
-		return TokenInfo{UserID: 999999999}, ok
+		return TokenInfo{UserID: 999999999}, false
 	}
 	return val.(TokenInfo), ok
 }

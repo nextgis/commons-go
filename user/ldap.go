@@ -149,13 +149,13 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(readerDN, passwordDN)
 	if err != nil {
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
 
@@ -164,13 +164,13 @@ func AuthenticateLDAPUser(username string, password string) error {
 	err = connection.Bind(userDN.DN, password)
 	if err != nil {
 		newErr := fmt.Errorf("User is not authorized. %s", err.Error())
-		context.CaptureException(newErr, true)
+		context.CaptureException(newErr, gin.IsDebugging())
 		return newErr
 	}
 
 	if len(userGroups) == 0 {
 		err = errors.New("User not belongs to authorized group")
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
 
@@ -226,7 +226,7 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 			groups = append(groups, entry.GetAttributeValue("cn"))
 		}
 	} else {
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 	}
 
 	return groups
@@ -245,14 +245,14 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 	passwordDN := context.StringOption("LDAP_DN_PWD")
 
 	if errb := connection.Bind(readerDN, passwordDN); errb != nil {
-		context.CaptureException(errb, true)
+		context.CaptureException(errb, gin.IsDebugging())
 		return "", "", errb
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
 		err := fmt.Errorf("User '%s'. Error: %s", username, err.Error())
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 		return "", "", err
 	}
 
@@ -262,13 +262,13 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 
 	// Check password
 	if errb := connection.Bind(userDN.DN, password); errb != nil {
-		context.CaptureException(errb, true)
+		context.CaptureException(errb, gin.IsDebugging())
 		return "", "", errb
 	}
 
 	if len(userGroups) < 1 {
 		err = errors.New("User not belongs to authorized group")
-		context.CaptureException(err, true)
+		context.CaptureException(err, gin.IsDebugging())
 		return "", "", err
 	}
 
@@ -319,7 +319,7 @@ func (li *LdapInfo) InitInfo() {
 func TestLDAPConnection(gc *gin.Context) {
 	var form LdapInfo
 	if err := gc.ShouldBind(&form); err != nil {
-		context.CaptureExceptionFromGin(gc, err, true)
+		context.CaptureExceptionFromGin(gc, err, gin.IsDebugging())
 		gc.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -327,7 +327,7 @@ func TestLDAPConnection(gc *gin.Context) {
 	connection, err := createLDAPConnectionInt(form.URL, form.TLS, 
 		form.TLSNoVerify, form.TLSCertPath, form.TLSKeyPath, form.TLSCaCertPath)
 	if err != nil {		
-		context.CaptureExceptionFromGin(gc, err, true)
+		context.CaptureExceptionFromGin(gc, err, gin.IsDebugging())
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
@@ -335,7 +335,7 @@ func TestLDAPConnection(gc *gin.Context) {
 
 	err = connection.Bind(form.DN, form.DNPassword)
 	if err != nil {
-		context.CaptureExceptionFromGin(gc, err, true)
+		context.CaptureExceptionFromGin(gc, err, gin.IsDebugging())
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
