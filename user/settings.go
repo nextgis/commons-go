@@ -40,6 +40,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 	context.SetBoolOption("OAUTH2_LOGIN", oi.Enable)
 	context.SetBoolOption("OAUTH2_CREATE_GROUPS", oi.CreateGroups)
 	context.SetBoolOption("OAUTH2_UPDATE_GROUPS", oi.UpdateGroups)
+	context.SetBoolOption("OAUTH2_USER_AUTOCREATE", oi.UserAutocreate)
 	
 	if len(oi.ClientID) > 0 {
 		context.SetStringOption("OAUTH2_CLIENT_ID", oi.ClientID)

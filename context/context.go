@@ -208,6 +208,7 @@ func CaptureExceptionFromGin(gc *gin.Context, err error, logMessage bool) {
 
 // GetBaseURL return base URL as scheme + host + port
 func GetBaseURL(gc *gin.Context) string {
+	// Need r.Use(location.Default()) in application to work this
 	url := location.Get(gc)
 	return url.Scheme + "://" + url.Host
 }

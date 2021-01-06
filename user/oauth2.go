@@ -140,6 +140,7 @@ type OAuth2Info struct {
 	LastnameAttribute     string `form:"lastname_attr" json:"lastname_attr"`                   // OAUTH2_PROFILE_LASTNAME_ATTR
 	CreateGroups          bool   `form:"create_groups" json:"create_groups"`                   // OAUTH2_CREATE_GROUPS
 	UpdateGroups          bool   `form:"update_groups" json:"update_groups"`                   // OAUTH2_UPDATE_GROUPS
+	UserAutocreate        bool   `form:"user_autocreate" json:"user_autocreate"`               // OAUTH2_USER_AUTOCREATE
 }
 
 // InitInfo Init OAuth2 Information
@@ -161,6 +162,7 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.LastnameAttribute = context.StringOption("OAUTH2_PROFILE_LASTNAME_ATTR")
 	oi.CreateGroups = context.BoolOption("OAUTH2_CREATE_GROUPS")
 	oi.UpdateGroups = context.BoolOption("OAUTH2_UPDATE_GROUPS")
+	oi.UserAutocreate = context.BoolOption("OAUTH2_USER_AUTOCREATE")
 }
 
 // GetToken Get access token
