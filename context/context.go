@@ -39,6 +39,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	sessionMaxAge = 86400 * 3 // 3d
+)
+
 // ContextKey Context key value
 var ContextKey = ""
 // FileStorePath Path to file store
@@ -119,6 +123,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("SESSION_KEY", "secret")
 	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
 	SetDefaultOption("TIMEOUT", 180) // Timeout to get remote data
+	SetDefaultOption("SESSION_MAX_AGE", sessionMaxAge)
 
 	// LDAP
 	SetDefaultOption("LDAP_LOGIN", false)
@@ -160,12 +165,12 @@ func CreateSession(appname string) gin.HandlerFunc {
 	secretKey := StringOption("SESSION_KEY")
 	// TODO: https://github.com/wader/gormstore/blob/master/gormstore.go
 	store := memstore.NewStore([]byte(secretKey))
-	// store.Options(sessions.Options{
-	// 	MaxAge: 3600*72, // default MaxAge: 86400 * 30,
-	// 	Path:   "/",
-	// 	// Secure:   true,
-	// 	HttpOnly: true,
-	// })
+	store.Options(sessions.Options{
+		MaxAge: IntOption("SESSION_MAX_AGE"), // default MaxAge: 86400 * 30,
+		Path:   "/",
+		// Secure:   true,
+		HttpOnly: true,
+	})
 
 	return sessions.Sessions(appname + "_session", store)
 }
