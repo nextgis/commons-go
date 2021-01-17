@@ -247,6 +247,7 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
+	defer response.Body.Close()
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
@@ -254,7 +255,6 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
 
 	if err != nil {
 		return nil, response.StatusCode, err

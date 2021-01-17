@@ -160,12 +160,12 @@ func CreateSession(appname string) gin.HandlerFunc {
 	secretKey := StringOption("SESSION_KEY")
 	// TODO: https://github.com/wader/gormstore/blob/master/gormstore.go
 	store := memstore.NewStore([]byte(secretKey))
-	store.Options(sessions.Options{
-		MaxAge: 3600*72,
-		Path:   "/",
-		// Secure:   true,
-		HttpOnly: true,
-	})
+	// store.Options(sessions.Options{
+	// 	MaxAge: 3600*72, // default MaxAge: 86400 * 30,
+	// 	Path:   "/",
+	// 	// Secure:   true,
+	// 	HttpOnly: true,
+	// })
 
 	return sessions.Sessions(appname + "_session", store)
 }
