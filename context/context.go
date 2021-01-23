@@ -124,6 +124,8 @@ func SetDefaults(appname string) {
 	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
 	SetDefaultOption("TIMEOUT", 180) // Timeout to get remote data
 	SetDefaultOption("SESSION_MAX_AGE", sessionMaxAge)
+	SetDefaultOption("LOG", false)
+	SetDefaultOption("LOG_ONLY_EDITS", false)
 
 	// LDAP
 	SetDefaultOption("LDAP_LOGIN", false)
