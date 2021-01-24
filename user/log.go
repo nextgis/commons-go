@@ -159,3 +159,8 @@ func OutputWithLog(gc *gin.Context, statusCode int, user *LogUserInfo,
 		gc.JSON(statusCode, obj)
 	}
 }
+
+// Log Write to log
+func Log(gc *gin.Context, statusCode int, user *LogUserInfo, ctxInfo *LogContextInfo) {
+	logToStdout(gc, statusCode, user, ctxInfo)
+}
