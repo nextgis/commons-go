@@ -136,10 +136,14 @@ func logToStdout(gc *gin.Context, statusCode int, user *LogUserInfo,
 	lr.Response.RouteName = gc.FullPath()
 
 	// User
-	lr.User = *user
+	if user != nil {
+		lr.User = *user
+	}
 
 	// Context
-	lr.Context = *ctxInfo
+	if ctxInfo != nil {
+		lr.Context = *ctxInfo
+	}
 
 	b, err := json.Marshal(lr)
 	if err != nil {

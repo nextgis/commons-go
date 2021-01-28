@@ -273,7 +273,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	})
 	if err != nil {
 		// TODO: Handle error
-		context.CaptureException(err, gin.IsDebugging())
+		// context.CaptureException(err, gin.IsDebugging())
 	}
 
 	var ui UserInfo
