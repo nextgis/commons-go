@@ -65,8 +65,8 @@ type logRecord struct {
 	TimeStamp time.Time      `json:"@timestamp"`
 	Request   requestPart    `json:"request"`
 	Response  responsePart   `json:"response"`
-	User      LogUserInfo    `json:"user"`
-	Context   LogContextInfo `json:"context"`
+	User      *LogUserInfo    `json:"user"`
+	Context   *LogContextInfo `json:"context"`
 }
 
 type requestPart struct {
@@ -136,14 +136,10 @@ func logToStdout(gc *gin.Context, statusCode int, user *LogUserInfo,
 	lr.Response.RouteName = gc.FullPath()
 
 	// User
-	if user != nil {
-		lr.User = *user
-	}
+	lr.User = user
 
 	// Context
-	if ctxInfo != nil {
-		lr.Context = *ctxInfo
-	}
+	lr.Context = ctxInfo
 
 	b, err := json.Marshal(lr)
 	if err != nil {
