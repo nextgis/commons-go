@@ -8,7 +8,7 @@
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
  * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
- * 
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -17,16 +17,15 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 package users
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -168,9 +167,7 @@ func (oi *OAuth2Info) InitInfo() {
 // GetToken Get access token
 func GetToken(code string) (*TokenJSON, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
@@ -295,9 +292,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 
 	// Get user info
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
@@ -344,9 +339,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 // TokenIntrospection Token introspection
 func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
@@ -395,9 +388,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 // GetSupportInfo Get support information
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
@@ -450,9 +441,7 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	}
 
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
@@ -523,9 +512,7 @@ func OAuth2Options(gc *gin.Context) {
 // RefreshToken Refresh access token
 func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,

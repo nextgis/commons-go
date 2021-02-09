@@ -28,6 +28,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -231,11 +232,9 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	if gin.IsDebugging() {
 		fmt.Printf("Get remote url: %s\n", url)
 	}
-	
+
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
-		},
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
     }
 	var netClient = &http.Client{
 		Transport: tr,
