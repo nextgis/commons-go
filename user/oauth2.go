@@ -167,7 +167,13 @@ func (oi *OAuth2Info) InitInfo() {
 
 // GetToken Get access token
 func GetToken(code string) (*TokenJSON, error) {
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
@@ -288,7 +294,13 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	}
 
 	// Get user info
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_USERINFO_ENDPOINT"), nil)
@@ -331,7 +343,13 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 
 // TokenIntrospection Token introspection
 func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
@@ -376,7 +394,13 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 
 // GetSupportInfo Get support information
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
@@ -425,7 +449,13 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+
@@ -492,7 +522,13 @@ func OAuth2Options(gc *gin.Context) {
 
 // RefreshToken Refresh access token
 func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	data := url.Values{}

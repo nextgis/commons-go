@@ -126,6 +126,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("SESSION_MAX_AGE", sessionMaxAge)
 	SetDefaultOption("LOG", false)
 	SetDefaultOption("LOG_ONLY_EDITS", false)
+	SetDefaultOption("HTTP_SKIP_SSL_VERIFY", false)
 
 	// LDAP
 	SetDefaultOption("LDAP_LOGIN", false)

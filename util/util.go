@@ -231,7 +231,14 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	if gin.IsDebugging() {
 		fmt.Printf("Get remote url: %s\n", url)
 	}
+	
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: ngContext.BoolOption("HTTP_SKIP_SSL_VERIFY")
+		},
+    }
 	var netClient = &http.Client{
+		Transport: tr,
 		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
