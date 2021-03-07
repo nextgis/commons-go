@@ -140,6 +140,7 @@ type OAuth2Info struct {
 	CreateGroups          bool   `form:"create_groups" json:"create_groups"`                   // OAUTH2_CREATE_GROUPS
 	UpdateGroups          bool   `form:"update_groups" json:"update_groups"`                   // OAUTH2_UPDATE_GROUPS
 	UserAutocreate        bool   `form:"user_autocreate" json:"user_autocreate"`               // OAUTH2_USER_AUTOCREATE
+	LogoutEndpoint string `form:"logout_endpoint" json:"logout_endpoint"` // OAUTH2_LOGOUT_ENDPOINT
 }
 
 // InitInfo Init OAuth2 Information
@@ -162,6 +163,42 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.CreateGroups = context.BoolOption("OAUTH2_CREATE_GROUPS")
 	oi.UpdateGroups = context.BoolOption("OAUTH2_UPDATE_GROUPS")
 	oi.UserAutocreate = context.BoolOption("OAUTH2_USER_AUTOCREATE")
+	oi.LogoutEndpoint = context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
+}
+
+// OAuth2Logout Logout from oauth
+func OAuth2Logout(token *TokenJSON, redirectURI string) error {
+	// https://www.keycloak.org/docs/latest/securing_apps/index.html#logout
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
+	var netClient = &http.Client{
+		Transport: tr,
+		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+
+	URL := context.StringOption("OAUTH2_LOGOUT_ENDPOINT") + "?redirect_uri=" + redirectURI
+	req, err := http.NewRequest("GET", URL, nil)
+	if err != nil {
+		context.CaptureException(err, gin.IsDebugging())
+		return err
+	}
+	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
+
+	response, err := netClient.Do(req)
+	if err != nil {
+		context.CaptureException(err, gin.IsDebugging())
+		return err
+	}
+	if response.StatusCode != http.StatusOK {
+		err := fmt.Errorf("Failed to get user_info. Return status code is %d", response.StatusCode)
+		context.CaptureException(err, gin.IsDebugging())
+		return err
+	}
+	ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	return nil
 }
 
 // GetToken Get access token

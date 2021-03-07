@@ -50,6 +50,11 @@ var FileStorePath = ""
 
 // StringOption return string settings option
 func StringOption(key string) string {
+	val := viper.GetString(key)
+	// Special case for empty string options
+	if val == "NONE" {
+		return ""
+	}
 	return viper.GetString(key)
 }
 
@@ -156,6 +161,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_CREATE_GROUPS", false)
 	SetDefaultOption("OAUTH2_UPDATE_GROUPS", false)
 	SetDefaultOption("OAUTH2_TOKEN_CACHE_TTL", 3600)
+	SetDefaultOption("OAUTH2_LOGOUT_ENDPOINT", "")
 
 	// Local
 	SetDefaultOption("LOCAL_LOGIN", true)

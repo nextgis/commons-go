@@ -25,11 +25,13 @@
 package util
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/tls"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -249,6 +251,64 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	if len(username) > 0 {
 		req.SetBasicAuth(username, password)
 	}
+	response, err := netClient.Do(req)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	defer response.Body.Close()
+
+	// Sometimes get 204
+	if response.StatusCode > 399 {
+		return nil, response.StatusCode, fmt.Errorf("Return status code is %d", response.StatusCode)
+	}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		return nil, response.StatusCode, err
+	}
+
+	return bodyBytes, http.StatusOK, nil
+}
+
+// PostRemoteBytes Post remote data with timeout
+func PostRemoteBytes(url, username, password string, data interface{}) ([]byte, int, error) {
+	return sendRemoteBytes("POST", url, username, password, data)
+}
+
+// PutRemoteBytes Put remote data with timeout
+func PutRemoteBytes(url, username, password string, data interface{}) ([]byte, int, error) {
+	return sendRemoteBytes("PUT", url, username, password, data)
+}
+
+func sendRemoteBytes(requestType, url, username, password string, data interface{}) ([]byte, int, error) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
+	var netClient = &http.Client{
+		Transport: tr,
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	if gin.IsDebugging() {
+		fmt.Printf("%s remote url: %s. Data %s\n", requestType,  url, jsonData)
+	}
+
+	req, err := http.NewRequest(requestType, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	if len(username) > 0 {
+		req.SetBasicAuth(username, password)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
 	response, err := netClient.Do(req)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
