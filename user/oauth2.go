@@ -69,10 +69,22 @@ func (token *TokenJSON)ToSession(session sessions.Session) sessions.Session {
 
 // FromSession Set token from session
 func (token *TokenJSON)FromSession(session sessions.Session) {
-	token.AccessToken = session.Get("access_token").(string)
-	token.RefreshToken = session.Get("refresh_token").(string)
-	token.ExpiresIn = session.Get("expires_in").(int)
-	token.TokenType = session.Get("token_type").(string)
+	val := session.Get("access_token")
+	if val != nil {
+		token.AccessToken = val.(string)
+	}
+	val = session.Get("refresh_token")
+	if val != nil {
+		token.RefreshToken = val.(string)
+	}
+	val = session.Get("expires_in")
+	if val != nil {
+		token.ExpiresIn = val.(int)
+	}
+	val = session.Get("token_type")
+	if val != nil {
+		token.TokenType = val.(string)
+	}
 }
 
 // UserInfo User information
