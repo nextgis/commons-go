@@ -194,7 +194,6 @@ func OAuth2Logout(token *TokenJSON) error {
 	}
 
 	data := url.Values{}
-
 	data.Set("refresh_token", token.RefreshToken)
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
@@ -209,7 +208,7 @@ func OAuth2Logout(token *TokenJSON) error {
 	if response.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
 		err := fmt.Errorf("Logout failed. Return status code is %d, Body: %v", response.StatusCode, bodyBytes)
-		// sentry.CaptureException(err) -- don't waste sentry
+		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}	
 	return nil
