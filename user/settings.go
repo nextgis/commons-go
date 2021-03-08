@@ -66,6 +66,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", endpoint + "/oauth2/authorize")
 			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", endpoint + "/oauth2/introspect")
 			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/api/v1/user_info")
+			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/api/v1/logout")
 
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "nextgis_guid")
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "username")
@@ -83,6 +84,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", endpoint + "/protocol/openid-connect/auth")
 			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", endpoint + "/protocol/openid-connect/token/introspect")
 			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/protocol/openid-connect/userinfo")
+			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/protocol/openid-connect/logout")
 
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "sub")
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "preferred_username")
@@ -102,6 +104,9 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 		}
 		if len(oi.UserInfoEndpoint) > 0 {
 			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", strings.TrimSuffix(oi.UserInfoEndpoint, "/"))
+		}
+		if len(oi.LogoutEndpoint) > 0 {
+			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", strings.TrimSuffix(oi.LogoutEndpoint, "/"))
 		}
 
 		if len(oi.SubjAttribute) > 0 {

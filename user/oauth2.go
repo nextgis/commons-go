@@ -59,7 +59,7 @@ type TokenJSON struct {
 }
 
 // ToSession Save token to session
-func (token *TokenJSON)ToSession(session sessions.Session) sessions.Session {
+func (token *TokenJSON) ToSession(session sessions.Session) sessions.Session {
 	session.Set("access_token", token.AccessToken)
 	session.Set("refresh_token", token.RefreshToken)
 	session.Set("token_type", token.TokenType)
@@ -68,7 +68,7 @@ func (token *TokenJSON)ToSession(session sessions.Session) sessions.Session {
 }
 
 // FromSession Set token from session
-func (token *TokenJSON)FromSession(session sessions.Session) {
+func (token *TokenJSON) FromSession(session sessions.Session) {
 	val := session.Get("access_token")
 	if val != nil {
 		token.AccessToken = val.(string)
@@ -152,7 +152,7 @@ type OAuth2Info struct {
 	CreateGroups          bool   `form:"create_groups" json:"create_groups"`                   // OAUTH2_CREATE_GROUPS
 	UpdateGroups          bool   `form:"update_groups" json:"update_groups"`                   // OAUTH2_UPDATE_GROUPS
 	UserAutocreate        bool   `form:"user_autocreate" json:"user_autocreate"`               // OAUTH2_USER_AUTOCREATE
-	LogoutEndpoint string `form:"logout_endpoint" json:"logout_endpoint"` // OAUTH2_LOGOUT_ENDPOINT
+	LogoutEndpoint        string `form:"logout_endpoint" json:"logout_endpoint"`               // OAUTH2_LOGOUT_ENDPOINT
 }
 
 // InitInfo Init OAuth2 Information
@@ -178,6 +178,9 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.LogoutEndpoint = context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
 }
 
+// Keycloak configuration URL
+// http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
+
 // OAuth2Logout Logout from oauth
 func OAuth2Logout(token *TokenJSON, redirectURI string) error {
 	// https://www.keycloak.org/docs/latest/securing_apps/index.html#logout
@@ -187,7 +190,7 @@ func OAuth2Logout(token *TokenJSON, redirectURI string) error {
 	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
 	URL := context.StringOption("OAUTH2_LOGOUT_ENDPOINT") + "?redirect_uri=" + redirectURI
@@ -216,18 +219,18 @@ func OAuth2Logout(token *TokenJSON, redirectURI string) error {
 // GetToken Get access token
 func GetToken(code string) (*TokenJSON, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
 	data := url.Values{}
-    data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-    data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
-    data.Set("grant_type", "authorization_code")
-    data.Set("code", code)
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
 	data.Set("redirect_uri", context.StringOption("OAUTH2_REDIRECT_URI"))
 
 	var response *http.Response
@@ -244,7 +247,7 @@ func GetToken(code string) (*TokenJSON, error) {
 			return nil, err
 		}
 		response, err = netClient.Do(req)
-	} else {	
+	} else {
 		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	}
 	if err != nil {
@@ -341,11 +344,11 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 
 	// Get user info
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_USERINFO_ENDPOINT"), nil)
 	if err != nil {
@@ -388,15 +391,15 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 // TokenIntrospection Token introspection
 func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
 	data := url.Values{}
-    data.Set("token", token.AccessToken)
+	data.Set("token", token.AccessToken)
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 	var response *http.Response
@@ -437,11 +440,11 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 // GetSupportInfo Get support information
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
 	if err != nil {
@@ -490,11 +493,11 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	}
 
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+
 		"/api/v1/integration/user_info/"+ngID+
@@ -561,15 +564,15 @@ func OAuth2Options(gc *gin.Context) {
 // RefreshToken Refresh access token
 func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
-    data.Set("refresh_token", token.RefreshToken)
+	data.Set("refresh_token", token.RefreshToken)
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 
@@ -596,7 +599,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 			return nil, err
 		}
 		response, err = netClient.Do(req)
-	} else {	
+	} else {
 		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	}
 
