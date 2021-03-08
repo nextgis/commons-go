@@ -27,7 +27,6 @@ package users
 import (
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -35,7 +34,6 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/nextgis/commons-go/context"
@@ -414,7 +412,8 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get token introspection. Return status code is %d", response.StatusCode)
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		err := fmt.Errorf("Failed to get token introspection. Return status code is %d, Body: %v", response.StatusCode, bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -604,11 +603,6 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	if err != nil {
 		err := fmt.Errorf("Failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	if response == nil {
-		err := errors.New("Unexpected error occured")
-		sentry.CaptureException(err)
 		return nil, err
 	}
 	defer response.Body.Close()
