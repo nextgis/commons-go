@@ -182,7 +182,7 @@ func (oi *OAuth2Info) InitInfo() {
 // http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
 
 // OAuth2Logout Logout from oauth
-func OAuth2Logout(token *TokenJSON, redirectURI string) error {
+func OAuth2Logout(token *TokenJSON) error {
 	// https://www.keycloak.org/docs/latest/securing_apps/index.html#logout
 
 	tr := &http.Transport{
@@ -193,25 +193,29 @@ func OAuth2Logout(token *TokenJSON, redirectURI string) error {
 		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-	URL := context.StringOption("OAUTH2_LOGOUT_ENDPOINT") + "?redirect_uri=" + redirectURI
-	req, err := http.NewRequest("GET", URL, nil)
-	if err != nil {
-		context.CaptureException(err, gin.IsDebugging())
-		return err
-	}
-	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
+	data := url.Values{}
 
-	response, err := netClient.Do(req)
+	data.Set("refresh_token", token.RefreshToken)
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+	data.Set("redirect_uri", context.StringOption("OAUTH2_REDIRECT_URI"))
+
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), data)
 	if err != nil {
+		err := fmt.Errorf("Failed to logout. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
-	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get user_info. Return status code is %d", response.StatusCode)
-		context.CaptureException(err, gin.IsDebugging())
+	if response == nil {
+		err := errors.New("Unexpected error occured")
+		sentry.CaptureException(err)
 		return err
 	}
-	ioutil.ReadAll(response.Body)
+	if response.StatusCode != http.StatusNoContent {
+		err := fmt.Errorf("Logout failed. Return status code is %d", response.StatusCode)
+		// sentry.CaptureException(err) -- don't waste sentry
+		return err
+	}
 	response.Body.Close()
 	return nil
 }
@@ -263,7 +267,7 @@ func GetToken(code string) (*TokenJSON, error) {
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		err := fmt.Errorf("Failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -370,7 +374,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		err := fmt.Errorf("Failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -420,7 +424,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		err := fmt.Errorf("Failed to get token introspection. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -467,7 +471,7 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, fmt.Errorf("Failed to get support_info. %s", err.Error())
@@ -521,7 +525,7 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		err := fmt.Errorf("Failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -619,7 +623,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		return nil, err
 	}
 	bodyBytes, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	defer response.Body.Close()
 	if err != nil {
 		err := fmt.Errorf("Failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
