@@ -253,8 +253,9 @@ func GetToken(code string) (*TokenJSON, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get access token. Return status code is %d",
-			response.StatusCode)
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		err := fmt.Errorf("Failed to get access token. Return status code is %d. Body: %v",
+			response.StatusCode, bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -362,7 +363,8 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get user_info. Return status code is %d", response.StatusCode)
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		err := fmt.Errorf("Failed to get user_info. Return status code is %d. Body: %v", response.StatusCode, bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -459,8 +461,9 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get support_info. Return status code is %d",
-			response.StatusCode)
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		err := fmt.Errorf("Failed to get support_info. Return status code is %d. Body %v",
+			response.StatusCode, bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -513,8 +516,9 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("Failed to get integration/user_info. Return status code is %d",
-			response.StatusCode)
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		err := fmt.Errorf("Failed to get integration/user_info. Return status code is %d. Body: %v",
+			response.StatusCode, bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
