@@ -176,6 +176,23 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.LogoutEndpoint = context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
 }
 
+type errorBody struct {
+	Error string `json:"error"`
+	ErrorDesc string `json:"error_description"`
+}
+
+func getErrorDescription(bodyBytes []byte) string {
+	var b errorBody
+	err := json.Unmarshal(bodyBytes, &b)
+	if err != nil {
+		return string(bodyBytes)
+	}
+	if len(b.ErrorDesc) > 0 {
+		return b.ErrorDesc
+	}
+	return b.Error
+}
+
 // Keycloak configuration URL
 // http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
 
@@ -205,7 +222,8 @@ func OAuth2Logout(token *TokenJSON) error {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Logout failed. Return status code is %d, Body: %v", response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Logout failed. Return status code is %d, Body: %s", 
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}	
@@ -254,8 +272,8 @@ func GetToken(code string) (*TokenJSON, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to get access token. Return status code is %d. Body: %v",
-			response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to get access token. Return status code is %d. Body: %s",
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -364,7 +382,8 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to get user_info. Return status code is %d. Body: %v", response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to get user_info. Return status code is %d. Body: %s", 
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -415,7 +434,8 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to get token introspection. Return status code is %d, Body: %v", response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to get token introspection. Return status code is %d, Body: %s", 
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -462,8 +482,8 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to get support_info. Return status code is %d. Body %v",
-			response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to get support_info. Return status code is %d. Body %s",
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -517,8 +537,8 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to get integration/user_info. Return status code is %d. Body: %v",
-			response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to get integration/user_info. Return status code is %d. Body: %s",
+			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -612,7 +632,8 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		err := fmt.Errorf("Failed to refresh token. Return status code is %d, Body: %v", response.StatusCode, bodyBytes)
+		err := fmt.Errorf("Failed to refresh token. Return status code is %d, Body: %s", 
+			response.StatusCode, getErrorDescription(bodyBytes))
 		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
 	}
@@ -631,5 +652,4 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		return nil, err
 	}
 	return &t, nil
-
 }
