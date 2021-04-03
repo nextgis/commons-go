@@ -107,6 +107,11 @@ func SetDefaultOption(key string, value interface{}) {
 	viper.SetDefault(key, value)
 }
 
+// RegisterAlias Register alias for option key
+func RegisterAlias(alias, key string) {
+	viper.RegisterAlias(alias, key)
+}
+
 // CreateContext Will add the application context to the context
 func CreateContext(value interface{}) gin.HandlerFunc {
 	return func(gc *gin.Context) {
