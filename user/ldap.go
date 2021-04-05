@@ -59,7 +59,7 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 	)
 
 	if searchRequest == nil {
-		err := errors.New("Failed to create request")
+		err := errors.New("failed to create request")
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 		return sr.Entries[0], nil
 	}
 
-	err = errors.New("User not found or too many entries returned")
+	err = errors.New("user not found or too many entries returned")
 	return nil, err
 }
 func createLDAPConnection() (*ldap.Conn, error) {
@@ -163,13 +163,13 @@ func AuthenticateLDAPUser(username string, password string) error {
 
 	err = connection.Bind(userDN.DN, password)
 	if err != nil {
-		newErr := fmt.Errorf("User is not authorized. %s", err.Error())
+		newErr := fmt.Errorf("user is not authorized. %s", err.Error())
 		context.CaptureException(newErr, gin.IsDebugging())
 		return newErr
 	}
 
 	if len(userGroups) == 0 {
-		err = errors.New("User not belongs to authorized group")
+		err = errors.New("user not belongs to authorized group")
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
@@ -177,30 +177,30 @@ func AuthenticateLDAPUser(username string, password string) error {
 	return nil
 }
 
-func getLDAPUserGroups(username string) ([]string, error) {
-	connection, err := createLDAPConnection()
-	if err != nil {
-		return nil, err
-	}
-	defer connection.Close()
+// func getLDAPUserGroups(username string) ([]string, error) {
+// 	connection, err := createLDAPConnection()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer connection.Close()
 
-	readerDN := context.StringOption("LDAP_DN")
-	passwordDN := context.StringOption("LDAP_DN_PWD")
+// 	readerDN := context.StringOption("LDAP_DN")
+// 	passwordDN := context.StringOption("LDAP_DN_PWD")
 
-	err = connection.Bind(readerDN, passwordDN)
-	if err != nil {
-		return nil, err
-	}
+// 	err = connection.Bind(readerDN, passwordDN)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	userDN, err := searchLDAPUser(username, connection)
-	if err != nil {
-		return nil, err
-	}
+// 	userDN, err := searchLDAPUser(username, connection)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	userGroups := getLDAPGroups(userDN, connection)
+// 	userGroups := getLDAPGroups(userDN, connection)
 
-	return userGroups, nil
-}
+// 	return userGroups, nil
+// }
 
 // Get a list of group names for specified user from LDAP/AD
 func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
@@ -251,7 +251,7 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
-		err := fmt.Errorf("User '%s'. Error: %s", username, err.Error())
+		err := fmt.Errorf("user '%s'. Error: %s", username, err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return "", "", err
 	}
@@ -267,7 +267,7 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 	}
 
 	if len(userGroups) < 1 {
-		err = errors.New("User not belongs to authorized group")
+		err = errors.New("user not belongs to authorized group")
 		context.CaptureException(err, gin.IsDebugging())
 		return "", "", err
 	}

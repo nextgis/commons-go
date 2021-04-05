@@ -114,7 +114,7 @@ func mapToString(mapData map[string][]string) string {
 
 func logToStdout(gc *gin.Context, statusCode int, user *LogUserInfo,
 	ctxInfo *LogContextInfo) {
-	if context.BoolOption("LOG") == false {
+	if !context.BoolOption("LOG") {
 		return
 	}
 	requestMethod := gc.Request.Method
