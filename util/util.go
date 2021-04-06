@@ -220,7 +220,7 @@ func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 	if val, ok := queryParameters[name]; ok {
 		if len(val) > 0 {
 			v, err := strconv.ParseInt(val[0], 0, 0)
-			if err != nil {
+			if err == nil {
 				str = int(v)
 			}
 		}
