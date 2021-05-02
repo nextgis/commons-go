@@ -7,7 +7,7 @@
  * Last Modified: Sunday, 20th September 2020 1:04:44 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
+ * Copyright 2019 - 2021 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -249,7 +249,11 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	}
 
 	if len(username) > 0 {
-		req.SetBasicAuth(username, password)
+		if username == "access_token" {
+			req.Header.Add("Authorization", password)
+		} else {
+			req.SetBasicAuth(username, password)
+		}
 	}
 	response, err := netClient.Do(req)
 	if err != nil {
@@ -259,7 +263,7 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
-		return nil, response.StatusCode, fmt.Errorf("Return status code is %d", response.StatusCode)
+		return nil, response.StatusCode, fmt.Errorf("return status code is %d", response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
@@ -305,7 +309,11 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 	}
 
 	if len(username) > 0 {
-		req.SetBasicAuth(username, password)
+		if username == "access_token" {
+			req.Header.Add("Authorization", password)
+		} else {
+			req.SetBasicAuth(username, password)
+		}
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -317,7 +325,7 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
-		return nil, response.StatusCode, fmt.Errorf("Return status code is %d", response.StatusCode)
+		return nil, response.StatusCode, fmt.Errorf("return status code is %d", response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)

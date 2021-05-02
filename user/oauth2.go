@@ -125,7 +125,7 @@ type NGUserSupportInfo struct {
 	Supported      bool   `json:"supported"`
 	StartDate      string `json:"start_date"`
 	EndDate        string `json:"end_date"`
-	NGID           string `json:"nextgis_guid"`
+	NGID           string `json:"nextgis_guid" binding:"required"`
 	Email          string `json:"email"`
 	EmailConfirmed bool   `json:"email_confirmed"`
 }
