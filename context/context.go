@@ -153,7 +153,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_ENDPOINT", "https://my.nextgis.com")
 	SetDefaultOption("OAUTH2_SCOPE", "user_info.read")
 	SetDefaultOption("OAUTH2_TYPE", 1)
-	SetDefaultOption("OAUTH2_TOKEN_ENDPOINT", "https://my.nextgis.com/oauth2/token")
+	SetDefaultOption("OAUTH2_TOKEN_ENDPOINT", "https://my.nextgis.com/oauth2/token/")
 	SetDefaultOption("OAUTH2_AUTH_ENDPOINT", "https://my.nextgis.com/oauth2/authorize")
 	SetDefaultOption("OAUTH2_USERINFO_ENDPOINT", "https://my.nextgis.com/api/v1/user_info")
 	SetDefaultOption("OAUTH2_INTROSPECTION_ENDPOINT", "https://my.nextgis.com/oauth2/introspect")
