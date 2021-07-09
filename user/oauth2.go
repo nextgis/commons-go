@@ -252,23 +252,8 @@ func GetToken(code, query string) (*TokenJSON, error) {
 	data.Set("code", code)
 	data.Set("redirect_uri", redirectURI)
 
-	var response *http.Response
-	var err error
-	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
-		fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "/?" + data.Encode()
-		if gin.IsDebugging() {
-			fmt.Println(fullURL)
-		}
-		req, rerr := http.NewRequest("POST", fullURL, nil)
-		if rerr != nil {
-			err = fmt.Errorf("failed to prepare access token request. %s", rerr.Error())
-			context.CaptureException(err, gin.IsDebugging())
-			return nil, err
-		}
-		response, err = netClient.Do(req)
-	} else {
-		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	}
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+	
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -611,24 +596,8 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		data.Set("scope", fullScope)
 	}
 
-	var response *http.Response
-	var err error
-	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
-		fullURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT") + "/?" + data.Encode()
-		if gin.IsDebugging() {
-			fmt.Println(fullURL)
-		}
-		req, rerr := http.NewRequest("POST", fullURL, nil)
-		if rerr != nil {
-			err = fmt.Errorf("failed to prepare refresh token request. %s", rerr.Error())
-			context.CaptureException(err, gin.IsDebugging())
-			return nil, err
-		}
-		response, err = netClient.Do(req)
-	} else {
-		response, err = netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	}
-
+	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+	
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
