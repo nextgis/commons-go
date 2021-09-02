@@ -263,7 +263,7 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
-		return nil, response.StatusCode, fmt.Errorf("return status code is %d", response.StatusCode)
+		return nil, response.StatusCode, fmt.Errorf("failed to get %s. Return status code is %d", url, response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
@@ -325,7 +325,7 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
-		return nil, response.StatusCode, fmt.Errorf("return status code is %d", response.StatusCode)
+		return nil, response.StatusCode, fmt.Errorf("failed to send %s. Return status code is %d", url, response.StatusCode)
 	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
@@ -335,4 +335,9 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 	}
 
 	return bodyBytes, http.StatusOK, nil
+}
+
+// IsZeroTime Check if time is zero
+func IsZeroTime(t time.Time) bool {
+	return t.Year() < 1000
 }
