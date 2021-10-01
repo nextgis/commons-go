@@ -50,10 +50,6 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 		context.SetStringOption("OAUTH2_CLIENT_SECRET", oi.ClientSecret)
 	}
 
-	if len(oi.RedirectURI) > 0 {
-		context.SetStringOption("OAUTH2_REDIRECT_URI", oi.RedirectURI)
-	}
-
 	context.SetIntOption("OAUTH2_TYPE", oi.Type)
 
 	if oi.Type == NextGISAuthType {

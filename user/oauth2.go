@@ -136,7 +136,6 @@ type OAuth2Info struct {
 	Endpoint              string `form:"endpoint" json:"endpoint"`                             // OAUTH2_ENDPOINT
 	ClientID              string `form:"client_id" json:"client_id"`                           // OAUTH2_CLIENT_ID
 	ClientSecret          string `form:"client_secret" json:"client_secret"`                   // OAUTH2_CLIENT_SECRET
-	RedirectURI           string `form:"redirect_uri" json:"redirect_uri"`                     // OAUTH2_REDIRECT_URI
 	Scope                 string `form:"scope" json:"scope"`                                   // OAUTH2_SCOPE
 	Type                  int    `form:"type" json:"type" binding:"required"`                  // OAUTH2_TYPE
 	TokenEndpoint         string `form:"token_endpoint" json:"token_endpoint"`                 // OAUTH2_TOKEN_ENDPOINT
@@ -158,7 +157,6 @@ func (oi *OAuth2Info) InitInfo() {
 	oi.Enable = context.BoolOption("OAUTH2_LOGIN")
 	oi.ClientID = context.StringOption("OAUTH2_CLIENT_ID")
 	oi.ClientSecret = context.StringOption("OAUTH2_CLIENT_SECRET")
-	oi.RedirectURI = context.StringOption("OAUTH2_REDIRECT_URI")
 	oi.Endpoint = context.StringOption("OAUTH2_ENDPOINT")
 	oi.Scope = context.StringOption("OAUTH2_SCOPE")
 	oi.Type = context.IntOption("OAUTH2_TYPE")

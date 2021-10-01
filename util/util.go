@@ -337,7 +337,7 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 	return bodyBytes, http.StatusOK, nil
 }
 
-// IsZeroTime Check if time is zero
+// IsZeroTime Check if time is not init
 func IsZeroTime(t time.Time) bool {
 	return t.Year() < 1000
 }
