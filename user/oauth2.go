@@ -229,7 +229,7 @@ func OAuth2Logout(token *TokenJSON) error {
 }
 
 // GetToken Get access token
-func GetToken(code, query string) (*TokenJSON, error) {
+func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
 	}
@@ -238,7 +238,6 @@ func GetToken(code, query string) (*TokenJSON, error) {
 		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-	redirectURI := context.StringOption("OAUTH2_REDIRECT_URI")
 	if len(query) > 0 {
 		redirectURI += query
 	}
@@ -552,7 +551,6 @@ type oauth2Options struct {
 	Enabled       bool   `json:"oauth_enabled"`
 	OAuthEndPoint string `json:"oauth_endpoint"`
 	ClientID      string `json:"client_id"`
-	RedirectURI   string `json:"redirect_uri"`
 	Scope         string `json:"scope"`
 	AltLogins     bool   `json:"alt_logins"`
 }
@@ -563,7 +561,6 @@ func OAuth2Options(gc *gin.Context) {
 		Enabled:       context.BoolOption("OAUTH2_LOGIN"),
 		OAuthEndPoint: context.StringOption("OAUTH2_AUTH_ENDPOINT"),
 		ClientID:      context.StringOption("OAUTH2_CLIENT_ID"),
-		RedirectURI:   context.StringOption("OAUTH2_REDIRECT_URI"),
 		AltLogins:     context.BoolOption("LDAP_LOGIN") || context.BoolOption("LOCAL_LOGIN"),
 		Scope:         context.StringOption("OAUTH2_SCOPE"),
 	}
