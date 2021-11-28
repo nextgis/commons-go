@@ -34,9 +34,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/disintegration/letteravatar"
 	"github.com/gin-gonic/gin"
 	"github.com/nextgis/commons-go/context"
+	"github.com/nextgis/commons-go/avatar"
 )
 
 const (
