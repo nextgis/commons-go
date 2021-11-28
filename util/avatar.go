@@ -42,7 +42,7 @@ import (
 
 // GetAvatar return avatar png bytes
 func GetAvatar(name, login, email string, size int, palette []color.Color, 
-	paletteKey string) []byte {
+	random bool) []byte {
 	url := getGravatarURL(email, "404")
 	data, code, err := GetRemoteBytes(url, "", "")
 	if err != nil || code == http.StatusNotFound {		
@@ -65,8 +65,8 @@ func GetAvatar(name, login, email string, size int, palette []color.Color,
 		if len(palette) > 0 {
 			opt.Palette = palette
 		}
-		if len(paletteKey) > 0 {
-			opt.PaletteKey = paletteKey
+		if !random {
+			opt.PaletteKey = name
 		}
 
 		// https://github.yuuza.net/disintegration/letteravatar
