@@ -28,6 +28,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"image/color"
 	"image/png"
 	"net/http"
 	"strings"
@@ -35,17 +36,13 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nextgis/commons-go/context"
 	"github.com/nextgis/commons-go/avatar"
+	"github.com/nextgis/commons-go/context"
 )
-
-const (
-	avatarSize = 48
-)
-
 
 // GetAvatar return avatar png bytes
-func GetAvatar(name, login, email string) []byte {
+func GetAvatar(name, login, email string, size int, palette []color.Color, 
+	paletteKey string) []byte {
 	url := getGravatarURL(email, "404")
 	data, code, err := GetRemoteBytes(url, "", "")
 	if err != nil || code == http.StatusNotFound {		
@@ -63,8 +60,17 @@ func GetAvatar(name, login, email string) []byte {
 				}
 			}
 		}
-		
-		img, err := letteravatar.Draw(avatarSize, firstRune, nil)
+
+		opt := letteravatar.Options{}
+		if len(palette) > 0 {
+			opt.Palette = palette
+		}
+		if len(paletteKey) > 0 {
+			opt.PaletteKey = paletteKey
+		}
+
+		// https://github.yuuza.net/disintegration/letteravatar
+		img, err := letteravatar.Draw(size, firstRune, &opt)
 		if err != nil {
 			context.CaptureException(err, gin.IsDebugging())
 			return nil
