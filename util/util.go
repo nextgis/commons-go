@@ -26,7 +26,6 @@ package util
 
 import (
 	"bytes"
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/tls"
@@ -189,14 +188,6 @@ func FileExists(filename string) bool {
         return false
     }
     return !info.IsDir()
-}
-
-// GetAvatar Form gravatar url from email
-// Value may be the following: 404, mp, identicon, monsterid, wavatar, retro, robohash, blank
-func GetAvatar(email string, d string) string {
-	hasher := md5.New()
-	hasher.Write([]byte(strings.TrimSpace(strings.ToLower(email))))
-	return "https://gravatar.com/avatar/" + hex.EncodeToString(hasher.Sum(nil)) + "?d=" + d
 }
 
 // QueryParameterString Return query parameter or default value
