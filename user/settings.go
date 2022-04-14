@@ -89,21 +89,21 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
 		}
 	} else {
-		if len(oi.TokenEndpoint) > 0 {
-			context.SetStringOption("OAUTH2_TOKEN_ENDPOINT", strings.TrimSuffix(oi.TokenEndpoint, "/"))
-		}
-		if len(oi.AuthEndpoint) > 0 {
-			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", strings.TrimSuffix(oi.AuthEndpoint, "/"))
-		}
-		if len(oi.IntrospectionEndpoint) > 0 {
-			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", strings.TrimSuffix(oi.IntrospectionEndpoint, "/"))
-		}
-		if len(oi.UserInfoEndpoint) > 0 {
-			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", strings.TrimSuffix(oi.UserInfoEndpoint, "/"))
-		}
-		if len(oi.LogoutEndpoint) > 0 {
-			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", strings.TrimSuffix(oi.LogoutEndpoint, "/"))
-		}
+		// if len(oi.TokenEndpoint) > 0 {
+		// 	context.SetStringOption("OAUTH2_TOKEN_ENDPOINT", strings.TrimSuffix(oi.TokenEndpoint, "/"))
+		// }
+		// if len(oi.AuthEndpoint) > 0 {
+		// 	context.SetStringOption("OAUTH2_AUTH_ENDPOINT", strings.TrimSuffix(oi.AuthEndpoint, "/"))
+		// }
+		// if len(oi.IntrospectionEndpoint) > 0 {
+		// 	context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", strings.TrimSuffix(oi.IntrospectionEndpoint, "/"))
+		// }
+		// if len(oi.UserInfoEndpoint) > 0 {
+		// 	context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", strings.TrimSuffix(oi.UserInfoEndpoint, "/"))
+		// }
+		// if len(oi.LogoutEndpoint) > 0 {
+		// 	context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", strings.TrimSuffix(oi.LogoutEndpoint, "/"))
+		// }
 
 		if len(oi.SubjAttribute) > 0 {
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", oi.SubjAttribute)
