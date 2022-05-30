@@ -63,9 +63,14 @@ func BoolOption(key string) bool {
 	return viper.GetBool(key)
 }
 
-// IntOption return boolean settings option
+// IntOption return int settings option
 func IntOption(key string) int {
 	return viper.GetInt(key)
+}
+
+// UintOption return uint settings option
+func UintOption(key string) uint {
+	return viper.GetUint(key)
 }
 
 // DurationOption return time duration option
@@ -78,26 +83,37 @@ func StringSliceOption(key string) []string {
 	return viper.GetStringSlice(key)
 }
 
+// FloatOption return float option
+func FloatOption(key string) float64 {
+	return viper.GetFloat64(key)
+}
+
 // SetStringOption set string option
 func SetStringOption(key string, value string) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }
 
-// SetBoolOption set string option
+// SetBoolOption set bool option
 func SetBoolOption(key string, value bool) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }
 
-// SetIntOption set string option
+// SetIntOption set int option
 func SetIntOption(key string, value int) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }
 
-// SetUintOption set string option
+// SetUintOption set uint option
 func SetUintOption(key string, value uint) error {
+	viper.Set(key, value)
+	return WriteConfig()
+}
+
+// SetFloatOption set float option
+func SetFloatOption(key string, value float64) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }
@@ -194,12 +210,12 @@ func DefaultSession(gc *gin.Context) sessions.Session {
 	return gc.MustGet(sessions.DefaultKey).(sessions.Session)
 }
 
-// GetSentryHub Returns sentry hub from gin context
+// GetSentryHub return Sentry hub from gin context
 func GetSentryHub(gc *gin.Context) *sentry.Hub {
 	return sentrygin.GetHubFromContext(gc)
 }
 
-// CaptureMessage Capture message for sentry
+// CaptureMessage capture message for sentry
 func CaptureMessage(msg string, logMessage bool) {
 	sentry.CaptureMessage(msg)
 	if logMessage {
@@ -207,7 +223,7 @@ func CaptureMessage(msg string, logMessage bool) {
 	}
 }
 
-// CaptureException Capture error for sentry 
+// CaptureException capture error for sentry 
 func CaptureException(err error, logMessage bool) {
 	sentry.CaptureException(err)
 	if logMessage {
@@ -215,7 +231,7 @@ func CaptureException(err error, logMessage bool) {
 	}
 }
 
-// CaptureExceptionFromGin Capture error from gin for sentry
+// CaptureExceptionFromGin capture error from gin for sentry
 func CaptureExceptionFromGin(gc *gin.Context, err error, logMessage bool) {
 	if hub := sentrygin.GetHubFromContext(gc); hub != nil {
 		hub.CaptureException(err)
@@ -258,7 +274,7 @@ func SetupConfig(appname string) {
 	FileStorePath = configPath
 }
 
-// InitSentry Initialize sentry
+// InitSentry initialize Sentry
 func InitSentry(release string) gin.HandlerFunc {
 	dsn := StringOption("SENTRY_DSN")
 	if len(dsn) == 0 {
