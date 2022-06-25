@@ -45,6 +45,7 @@ const (
 
 // ContextKey Context key value
 var ContextKey = ""
+
 // FileStorePath Path to file store
 var FileStorePath = ""
 
@@ -202,7 +203,7 @@ func CreateSession(appname string) gin.HandlerFunc {
 		HttpOnly: true,
 	})
 
-	return sessions.Sessions(appname + "_session", store)
+	return sessions.Sessions(appname+"_session", store)
 }
 
 // DefaultSession is shortcut to get session
@@ -223,7 +224,7 @@ func CaptureMessage(msg string, logMessage bool) {
 	}
 }
 
-// CaptureException capture error for sentry 
+// CaptureException capture error for sentry
 func CaptureException(err error, logMessage bool) {
 	sentry.CaptureException(err)
 	if logMessage {
@@ -257,7 +258,7 @@ func SetupConfig(appname string) {
 
 	if len(configPath) == 0 {
 		configPath = "./" + appname
-	} 
+	}
 	// Create file store
 	os.MkdirAll(configPath, 0755)
 	viper.AddConfigPath(configPath)
@@ -283,11 +284,23 @@ func InitSentry(release string) gin.HandlerFunc {
 		}
 	}
 	if err := sentry.Init(sentry.ClientOptions{Dsn: dsn, Release: release}); err != nil {
-		CaptureException(fmt.Errorf("Sentry initialization failed: %s", err.Error()), true)
+		CaptureException(fmt.Errorf("sentry initialization failed: %s", err.Error()), true)
 		return func(gc *gin.Context) {
 			gc.Next()
 		}
 	}
 
 	return sentrygin.New(sentrygin.Options{Repanic: true})
+}
+
+// CreateLocation create location handler
+func CreateLocation(host, scheme, headersScheme, headersHost string) gin.HandlerFunc {
+	return location.New(location.Config{
+		Host:   host,
+		Scheme: scheme,
+		Headers: location.Headers{
+			Scheme: headersScheme,
+			Host:   headersHost,
+		},
+	})
 }
