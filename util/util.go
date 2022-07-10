@@ -219,6 +219,21 @@ func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 	return str
 }
 
+// GetRemoteSmallFile Get remote data with timeout and write to file
+func GetRemoteSmallFile(url, username, password, outPath string) (int, error) {
+	b, code, err := GetRemoteBytes(url, username, password)
+	if err != nil {
+		return code, err
+	}
+
+	code = http.StatusCreated
+	err = ioutil.WriteFile(outPath, b, 0644)
+	if err != nil {
+		code = http.StatusInternalServerError
+	}
+	return code, err
+}
+
 // GetRemoteBytes Get remote data with timeout
 func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	// https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779

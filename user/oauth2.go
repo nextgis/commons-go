@@ -228,8 +228,7 @@ func OAuth2Logout(token *TokenJSON) error {
 	return nil
 }
 
-// GetToken Get access token
-func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
+func getToken(data url.Values) (*TokenJSON, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
 	}
@@ -237,17 +236,6 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 		Transport: tr,
 		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
-
-	if len(query) > 0 {
-		redirectURI += query
-	}
-
-	data := url.Values{}
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
-	data.Set("grant_type", "authorization_code")
-	data.Set("code", code)
-	data.Set("redirect_uri", redirectURI)
 
 	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 	
@@ -279,6 +267,33 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 		return nil, err
 	}
 	return &token, nil
+}
+
+// GetToken Get access token
+func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
+	if len(query) > 0 {
+		redirectURI += query
+	}
+
+	data := url.Values{}
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("redirect_uri", redirectURI)
+
+	return getToken(data)
+}
+
+
+// GetTokenByClinetSecret Get access token for client id and client secret
+func GetTokenByClinetSecret() (*TokenJSON, error) {
+	data := url.Values{}
+	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
+	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+	data.Set("grant_type", "client_credentials")
+
+	return getToken(data)
 }
 
 func unmarshalUserInfo(claims map[string]interface{}) *UserInfo {
