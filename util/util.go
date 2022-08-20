@@ -220,8 +220,8 @@ func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 }
 
 // GetRemoteSmallFile Get remote data with timeout and write to file
-func GetRemoteSmallFile(url, username, password, outPath string) (int, error) {
-	b, code, err := GetRemoteBytes(url, username, password)
+func GetRemoteSmallFile(url, username, password string, addHeaders map[string]string, outPath string) (int, error) {
+	b, code, err := GetRemoteBytes(url, username, password, addHeaders)
 	if err != nil {
 		return code, err
 	}
@@ -234,8 +234,21 @@ func GetRemoteSmallFile(url, username, password, outPath string) (int, error) {
 	return code, err
 }
 
+func setupRequest(req *http.Request, username, password string, addHeaders map[string]string) {
+	if len(username) > 0 {
+		if username == "access_token" {
+			req.Header.Add("Authorization", password)
+		} else {
+			req.SetBasicAuth(username, password)
+		}
+	}
+	for k, v := range addHeaders { 
+		req.Header.Add(k, v)
+	}
+}
+
 // GetRemoteBytes Get remote data with timeout
-func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
+func GetRemoteBytes(url, username, password string, addHeaders map[string]string) ([]byte, int, error) {
 	// https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
 	if gin.IsDebugging() {
 		fmt.Printf("Get remote url: %s\n", url)
@@ -253,14 +266,7 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-
-	if len(username) > 0 {
-		if username == "access_token" {
-			req.Header.Add("Authorization", password)
-		} else {
-			req.SetBasicAuth(username, password)
-		}
-	}
+	setupRequest(req, username, password, addHeaders)
 	response, err := netClient.Do(req)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -282,16 +288,16 @@ func GetRemoteBytes(url, username, password string) ([]byte, int, error) {
 }
 
 // PostRemoteBytes Post remote data with timeout
-func PostRemoteBytes(url, username, password string, data interface{}) ([]byte, int, error) {
-	return sendRemoteBytes("POST", url, username, password, data)
+func PostRemoteBytes(url, username, password string, addHeaders map[string]string, data interface{}) ([]byte, int, error) {
+	return sendRemoteBytes("POST", url, username, password, addHeaders, data)
 }
 
 // PutRemoteBytes Put remote data with timeout
-func PutRemoteBytes(url, username, password string, data interface{}) ([]byte, int, error) {
-	return sendRemoteBytes("PUT", url, username, password, data)
+func PutRemoteBytes(url, username, password string, addHeaders map[string]string, data interface{}) ([]byte, int, error) {
+	return sendRemoteBytes("PUT", url, username, password, addHeaders, data)
 }
 
-func sendRemoteBytes(requestType, url, username, password string, data interface{}) ([]byte, int, error) {
+func sendRemoteBytes(requestType, url, username, password string, addHeaders map[string]string, data interface{}) ([]byte, int, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
 	}
@@ -314,13 +320,7 @@ func sendRemoteBytes(requestType, url, username, password string, data interface
 		return nil, http.StatusInternalServerError, err
 	}
 
-	if len(username) > 0 {
-		if username == "access_token" {
-			req.Header.Add("Authorization", password)
-		} else {
-			req.SetBasicAuth(username, password)
-		}
-	}
+	setupRequest(req, username, password, addHeaders)
 	req.Header.Set("Content-Type", "application/json")
 
 	response, err := netClient.Do(req)

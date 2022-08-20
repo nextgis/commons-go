@@ -44,7 +44,7 @@ import (
 func GetAvatar(name, login, email string, size int, palette []color.Color, 
 	random bool) []byte {
 	url := getGravatarURL(email, "404")
-	data, code, err := GetRemoteBytes(url, "", "")
+	data, code, err := GetRemoteBytes(url, "", "", map[string]string{})
 	if err != nil || code == http.StatusNotFound {		
 		name = strings.TrimSpace(name)
 		firstRune, _ := utf8.DecodeRuneInString(name)

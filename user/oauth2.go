@@ -286,8 +286,8 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 }
 
 
-// GetTokenByClinetSecret Get access token for client id and client secret
-func GetTokenByClinetSecret() (*TokenJSON, error) {
+// GetTokenByClientSecret Get access token for client id and client secret
+func GetTokenByClientSecret() (*TokenJSON, error) {
 	data := url.Values{}
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
