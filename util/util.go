@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -109,7 +110,7 @@ func ContainsStr(a []string, x string) bool {
 }
 
 // ContainsInt check value present in array
-func ContainsInt(a []uint, x uint) bool {
+func ContainsInt(a []int, x int) bool {
     for _, n := range a {
         if x == n {
             return true
@@ -232,6 +233,78 @@ func GetRemoteSmallFile(url, username, password string, addHeaders map[string]st
 		code = http.StatusInternalServerError
 	}
 	return code, err
+}
+
+// PostRemoteSmallFile Post remote data with timeout
+func PostRemoteSmallFile(url, username, password string, addHeaders map[string]string, filePath, dstFileName string) ([]byte, int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, http.StatusNotFound, err
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", dstFileName)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	fileStat, err := file.Stat()
+	if err != nil {
+    	return nil, http.StatusInternalServerError, err
+	}
+
+	err = writer.WriteField("totalSize", fmt.Sprintf("%d", fileStat.Size()))
+	if err != nil {
+    	return nil, http.StatusInternalServerError, err
+	}
+	err = writer.WriteField("filename", dstFileName)
+	if err != nil {
+    	return nil, http.StatusInternalServerError, err
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
+	var netClient = &http.Client{
+		Transport: tr,
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+
+	setupRequest(req, username, password, addHeaders)
+	response, err := netClient.Do(req)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	defer response.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+
+	// Sometimes get 204
+	if response.StatusCode > 399 {
+		return bodyBytes, response.StatusCode, fmt.Errorf("failed to send %s. Return status code is %d", url, response.StatusCode)
+	}
+
+	if err != nil {
+		return bodyBytes, response.StatusCode, err
+	}
+	return bodyBytes, http.StatusOK, nil
 }
 
 func setupRequest(req *http.Request, username, password string, addHeaders map[string]string) {
