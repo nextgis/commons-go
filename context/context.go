@@ -151,8 +151,6 @@ func SetDefaults(appname string) {
 	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
 	SetDefaultOption("TIMEOUT", 180) // Timeout to get remote data
 	SetDefaultOption("SESSION_MAX_AGE", sessionMaxAge)
-	SetDefaultOption("LOG", false)
-	SetDefaultOption("LOG_ONLY_EDITS", false)
 	SetDefaultOption("HTTP_SKIP_SSL_VERIFY", false)
 
 	// LDAP
@@ -164,6 +162,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("LDAP_GROUP_FILTER", fmt.Sprintf("(cn=%s)", appname))
 	SetDefaultOption("LDAP_GROUP_ATTR", "memberUid")
 	SetDefaultOption("LDAP_DEFAULT_GROUP_ID", 0)
+	SetDefaultOption("LDAP_UPDATE_GROUPS", false)
 
 	// oAuth2
 	SetDefaultOption("OAUTH2_LOGIN", false)
@@ -171,9 +170,9 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_SCOPE", "user_info.read")
 	SetDefaultOption("OAUTH2_TYPE", 1)
 	SetDefaultOption("OAUTH2_TOKEN_ENDPOINT", "https://my.nextgis.com/oauth2/token/")
-	SetDefaultOption("OAUTH2_AUTH_ENDPOINT", "https://my.nextgis.com/oauth2/authorize")
-	SetDefaultOption("OAUTH2_USERINFO_ENDPOINT", "https://my.nextgis.com/api/v1/user_info")
-	SetDefaultOption("OAUTH2_INTROSPECTION_ENDPOINT", "https://my.nextgis.com/oauth2/introspect")
+	SetDefaultOption("OAUTH2_AUTH_ENDPOINT", "https://my.nextgis.com/oauth2/authorize/")
+	SetDefaultOption("OAUTH2_USERINFO_ENDPOINT", "https://my.nextgis.com/api/v1/user_info/")
+	SetDefaultOption("OAUTH2_INTROSPECTION_ENDPOINT", "https://my.nextgis.com/oauth2/introspect/")
 	SetDefaultOption("OAUTH2_PROFILE_SUBJ_ATTR", "nextgis_guid")
 	SetDefaultOption("OAUTH2_PROFILE_KEYNAME_ATTR", "username")
 	SetDefaultOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "first_name")
@@ -187,6 +186,10 @@ func SetDefaults(appname string) {
 
 	// Local
 	SetDefaultOption("LOCAL_LOGIN", true)
+	SetDefaultOption("DEFAULT_LANGUAGE", "en")
+	SetDefaultOption("LOG", false)
+	SetDefaultOption("LOG_ONLY_EDITS", false)
+	SetDefaultOption("ADMIN_GROUP_NAME", "Administrators")
 
 	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
 }

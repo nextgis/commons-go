@@ -296,7 +296,7 @@ func GetTokenByClientSecret() (*TokenJSON, error) {
 	return getToken(data)
 }
 
-func unmarshalUserInfo(claims map[string]interface{}) *UserInfo {
+func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	var ui UserInfo
 	if val, ok := claims[context.StringOption("OAUTH2_PROFILE_KEYNAME_ATTR")]; ok {
 		ui.Username = val.(string)
@@ -333,11 +333,11 @@ func unmarshalUserInfo(claims map[string]interface{}) *UserInfo {
 	if val, ok := claims["email_confirmed"]; ok {
 		ui.EmailConfirmed = val.(bool)
 	}
-	return &ui
+	return ui
 }
 
 // GetUserInfo Get user information
-func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
+func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 
 	// First try JWT
 	jwtVal, _ := jwt.Parse(token.AccessToken, func(token *jwt.Token) (interface{}, error) {
@@ -351,11 +351,11 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	var ui UserInfo
 	if jwtVal != nil {
 		if claims, ok := jwtVal.Claims.(jwt.MapClaims); ok {
-			ui = *unmarshalUserInfo(claims)
+			ui = unmarshalUserInfo(claims)
 		}
 
 		if len(ui.ID) > 0 {
-			return &ui, nil
+			return ui, nil
 		}
 	}
 
@@ -371,7 +371,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	if err != nil {
 		err := fmt.Errorf("failed to prepare user_info request. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
+		return ui, err
 	}
 	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
 
@@ -379,21 +379,20 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
+		return ui, err
 	}
 	defer response.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get user_info. Return status code is %d. Body: %s", 
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
+		return ui, err
 	}
-	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
+		return ui, err
 	}
 
 	claims := make(map[string]interface{})
@@ -401,7 +400,7 @@ func GetUserInfo(token *TokenJSON) (*UserInfo, error) {
 	if err != nil {
 		err := fmt.Errorf("failed to parse user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
+		return ui, err
 	}
 
 	return unmarshalUserInfo(claims), nil
@@ -571,6 +570,11 @@ type oauth2Options struct {
 }
 
 // OAuth2Options Get oauth options: endpoint, cleint_id, etc.
+// @Summary Get oauth options: endpoint, cleint_id, etc.
+// @Tags admin
+// @Produce json
+// @Success 200 {object} oauth2Options
+// @Router /api/oauth2/options [get]
 func OAuth2Options(gc *gin.Context) {
 	var options = &oauth2Options{
 		Enabled:       context.BoolOption("OAUTH2_LOGIN"),

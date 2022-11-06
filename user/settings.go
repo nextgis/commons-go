@@ -1,14 +1,14 @@
 /*
  * File: settings.go
  * Project: ngcommon
- * File Created: Monday, 31st August 2019 1:29:06 am
+ * File Created: Monday, 31st August 2020 1:29:06 am
  * Author: Dmitry Baryshnikov <dmitry.baryshnikov@nextgis.com>
  * -----
- * Last Modified: Sunday, 20th September 2020 1:04:30 am
+ * Last Modified: Sunday, 6th November 2022 3:06:10 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
- *
+ * Copyright 2019 - 2022 NextGIS, <info@nextgis.com>
+ * 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *
+ * 
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -33,6 +33,10 @@ import (
 // UpdateLocalSettings Update local setting
 func UpdateLocalSettings(li *LocalAuthInfo) {
 	context.SetBoolOption("LOCAL_LOGIN", li.Enable)
+	context.SetBoolOption("LOG", li.Log)
+	context.SetBoolOption("LOG_ONLY_EDITS", li.LogEdits)
+	context.SetStringOption("DEFAULT_LANGUAGE", li.DefaultLang)
+	context.SetStringOption("ADMIN_GROUP_NAME", li.AdminGroup)
 }
 
 // UpdateOAuth2Settings Update oauth2 setting

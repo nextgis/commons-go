@@ -233,11 +233,12 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 }
 
 // GetLDAPUserDetails Get LDAP user details
-func GetLDAPUserDetails(username string, password string) (string, string, error) {
+func GetLDAPUserDetails(username string, password string) (UserInfo, error) {
+	var ui UserInfo
 	connection, err := createLDAPConnection()
 	if err != nil {
 		sentry.CaptureException(err)
-		return "", "", err
+		return ui, err
 	}
 	defer connection.Close()
 
@@ -246,35 +247,44 @@ func GetLDAPUserDetails(username string, password string) (string, string, error
 
 	if errb := connection.Bind(readerDN, passwordDN); errb != nil {
 		context.CaptureException(errb, gin.IsDebugging())
-		return "", "", errb
+		return ui, errb
 	}
 
 	userDN, err := searchLDAPUser(username, connection)
 	if err != nil {
 		err := fmt.Errorf("user '%s'. Error: %s", username, err.Error())
 		context.CaptureException(err, gin.IsDebugging())
-		return "", "", err
+		return ui, err
 	}
 
-	userDN.PrettyPrint(2)
+	if gin.IsDebugging() {
+		userDN.PrettyPrint(2)
+	}
 
 	userGroups := getLDAPGroups(userDN, connection)
 
 	// Check password
 	if errb := connection.Bind(userDN.DN, password); errb != nil {
 		context.CaptureException(errb, gin.IsDebugging())
-		return "", "", errb
+		return ui, errb
 	}
 
 	if len(userGroups) < 1 {
 		err = errors.New("user not belongs to authorized group")
 		context.CaptureException(err, gin.IsDebugging())
-		return "", "", err
+		return ui, err
 	}
 
-	fullName := userDN.GetAttributeValue("cn")
-	email := userDN.GetAttributeValue("mail")
-	return fullName, email, nil
+	ui.Roles = userGroups
+	ui.Email = userDN.GetAttributeValue("mail")
+	ui.EmailConfirmed = true
+	ui.Username = userDN.GetAttributeValue("cn")
+	ui.FirstName = userDN.GetAttributeValue("givenname")
+	ui.LastName = userDN.GetAttributeValue("sn")
+	ui.ID = userDN.GetAttributeValue("uidnumber")
+	ui.Locale = context.StringOption("DEFAULT_LANGUAGE")
+
+	return ui, nil
 }
 
 // LdapInfo LDAP Info structure
