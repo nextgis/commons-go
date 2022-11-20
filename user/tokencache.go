@@ -27,16 +27,16 @@ package users
 import (
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/nextgis/commons-go/context"
 )
 
-var tokenCache *lru.Cache
+var tokenCache *lru.Cache[string, TokenInfo]
 
 // InitTokenCache Initialise token cache
 func InitTokenCache() error {
 	maxCacheSize := context.IntOption("TOKEN_CACHE_SIZE")
-	uc, err := lru.New(maxCacheSize)
+	uc, err := lru.New[string, TokenInfo](maxCacheSize)
 	if err == nil {
 		tokenCache = uc
 	}
@@ -50,20 +50,20 @@ type TokenInfo struct {
 }
 
 // GetFromTokenCache Get value from token cache
-func GetFromTokenCache(key interface{}) (value TokenInfo, ok bool)  {
+func GetFromTokenCache(key string) (value TokenInfo, ok bool)  {
 	val, ok := tokenCache.Get(key)
-	if !ok || val == nil {
+	if !ok {
 		return TokenInfo{UserID: 999999999}, false
 	}
-	return val.(TokenInfo), ok
+	return val, ok
 }
 
 // RemoveFromTokenCache Remove token from cache
-func RemoveFromTokenCache(key interface{}) {
+func RemoveFromTokenCache(key string) {
 	tokenCache.Remove(key)
 }
 
 // AddToTokenCache Add value to token cache
-func AddToTokenCache(key interface{}, value TokenInfo) (bool) {
+func AddToTokenCache(key string, value TokenInfo) (bool) {
 	return tokenCache.Add(key, value)
 }

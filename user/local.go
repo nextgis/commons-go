@@ -28,14 +28,18 @@ import "github.com/nextgis/commons-go/context"
 
 // LocalAuthInfo Local Info structure
 type LocalAuthInfo struct {
-	Enable      bool   `form:"enable" json:"enable"`
-	Log         bool   `form:"log" json:"log"`
-	LogEdits    bool   `form:"log_edits" json:"log_edits"`
-	DefaultLang string `form:"default_lang" json:"default_lang"`
-	AdminGroup  string `form:"admin_group" json:"admin_group"`
+	Enable      bool   `form:"enable" json:"enable"`             // LOCAL_LOGIN
+	Log         bool   `form:"log" json:"log"`                   // LOG
+	LogEdits    bool   `form:"log_edits" json:"log_edits"`       // LOG_ONLY_EDITS
+	DefaultLang string `form:"default_lang" json:"default_lang"` // DEFAULT_LANGUAGE
+	AdminGroup  string `form:"admin_group" json:"admin_group"`   // ADMIN_GROUP_NAME
 }
 
 // InitInfo Fill LocalAuthInfo structure by values
 func (li *LocalAuthInfo) InitInfo() {
 	li.Enable = context.BoolOption("LOCAL_LOGIN")
+	li.Log = context.BoolOption("LOG")
+	li.LogEdits = context.BoolOption("LOG_ONLY_EDITS")
+	li.DefaultLang = context.StringOption("DEFAULT_LANGUAGE")
+	li.AdminGroup = context.StringOption("ADMIN_GROUP_NAME")
 }

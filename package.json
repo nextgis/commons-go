@@ -1,6 +1,6 @@
 {
     "name": "ngcommon",
-    "version": "0.7.3",
+    "version": "0.18.1",
     "description": "NextGIS common go library",
     "author": "Dmitry Baryshnikov <dmitry.baryshnikov@nextgis.com>",
     "license": "GPL-3.0-or-later",
