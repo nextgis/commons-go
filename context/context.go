@@ -119,6 +119,12 @@ func SetFloatOption(key string, value float64) error {
 	return WriteConfig()
 }
 
+// StringSliceOption return string slice option
+func SetStringSliceOption(key string, value []string) error {
+	viper.Set(key, value)
+	return WriteConfig()
+}
+
 // SetDefaultOption Set default value to option
 func SetDefaultOption(key string, value interface{}) {
 	viper.SetDefault(key, value)
