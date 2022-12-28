@@ -99,8 +99,8 @@ func RandomKey(n int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// ContainsStr check value present in array
-func ContainsStr(a []string, x string) bool {
+// Contains check value present in array
+func Contains[K comparable](a []K, x K) bool {
     for _, n := range a {
         if x == n {
             return true
@@ -109,24 +109,15 @@ func ContainsStr(a []string, x string) bool {
     return false
 }
 
-// ContainsInt check value present in array
-func ContainsInt(a []int, x int) bool {
-    for _, n := range a {
-        if x == n {
-            return true
+// DeleteEmptyStrings return string slice without empty strings
+func DeleteEmptyStrings(s []string) []string {
+    var r []string
+    for _, str := range s {
+        if len(str) == 0 {
+            r = append(r, str)
         }
     }
-    return false
-}
-
-// ContainsUint check value present in array
-func ContainsUint(a []uint, x uint) bool {
-	for _, n := range a {
-		if x == n {
-			return true
-		}
-	}
-	return false
+    return r
 }
 
 // StringToDate Convert string to date
