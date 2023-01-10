@@ -152,8 +152,8 @@ type OAuth2Info struct {
 	LogoutEndpoint        string `form:"logout_endpoint" json:"logout_endpoint"`               // OAUTH2_LOGOUT_ENDPOINT
 }
 
-// InitInfo Init OAuth2 Information
-func (oi *OAuth2Info) InitInfo() {
+// Fill Init OAuth2 Information
+func (oi *OAuth2Info) Fill() {
 	oi.Enable = context.BoolOption("OAUTH2_LOGIN")
 	oi.ClientID = context.StringOption("OAUTH2_CLIENT_ID")
 	oi.ClientSecret = context.StringOption("OAUTH2_CLIENT_SECRET")
