@@ -35,8 +35,8 @@ type LocalAuthInfo struct {
 	AdminGroup  string `form:"admin_group" json:"admin_group"`   // ADMIN_GROUP_NAME
 }
 
-// InitInfo Fill LocalAuthInfo structure by values
-func (li *LocalAuthInfo) InitInfo() {
+// Fill Fill LocalAuthInfo structure by values
+func (li *LocalAuthInfo) Fill() {
 	li.Enable = context.BoolOption("LOCAL_LOGIN")
 	li.Log = context.BoolOption("LOG")
 	li.LogEdits = context.BoolOption("LOG_ONLY_EDITS")

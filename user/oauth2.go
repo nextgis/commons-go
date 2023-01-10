@@ -28,14 +28,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/nextgis/commons-go/context"
 )
 
@@ -219,7 +219,7 @@ func OAuth2Logout(token *TokenJSON) error {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusNoContent {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("logout failed. Return status code is %d, Body: %s", 
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
@@ -246,14 +246,14 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get access token. Return status code is %d. Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -382,7 +382,7 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 		return ui, err
 	}
 	defer response.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if response.StatusCode != http.StatusOK {
 		err := fmt.Errorf("failed to get user_info. Return status code is %d. Body: %s", 
 			response.StatusCode, getErrorDescription(bodyBytes))
@@ -434,13 +434,13 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get token introspection. Return status code is %d, Body: %s", 
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		err := fmt.Errorf("failed to get token introspection. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -482,13 +482,13 @@ func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get support_info. Return status code is %d. Body %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, fmt.Errorf("failed to get support_info. %s", err.Error())
@@ -537,13 +537,13 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get integration/user_info. Return status code is %d. Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -619,13 +619,13 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s", 
 			response.StatusCode, getErrorDescription(bodyBytes))
 		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
 	}
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())

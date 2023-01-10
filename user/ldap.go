@@ -8,7 +8,7 @@
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
  * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
- * 
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -17,12 +17,10 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 
 package users
 
@@ -31,8 +29,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
@@ -54,7 +52,7 @@ func searchLDAPUser(username string, conn *ldap.Conn) (*ldap.Entry, error) {
 		baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 		fmt.Sprintf("(&%s(%s=%s))", filter, userNameAttribute, usernameEscaped),
-		[]string{"dn","uid","cn","mail"},
+		[]string{"dn", "uid", "cn", "mail"},
 		nil,
 	)
 
@@ -88,7 +86,7 @@ func createLDAPConnection() (*ldap.Conn, error) {
 	return createLDAPConnectionInt(url, tlsType, tlsNoVerify, certPath, keyPath, caCertPath)
 }
 
-func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool, 
+func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 	certPath string, keyPath string, caCertPath string) (*ldap.Conn, error) {
 	if tlsType == "TLS" || tlsType == "StartTLS" {
 		config := &tls.Config{}
@@ -98,15 +96,15 @@ func createLDAPConnectionInt(url string, tlsType string, tlsNoVerify bool,
 			if err != nil {
 				return nil, err
 			}
-	
+
 			config.Certificates = []tls.Certificate{cert}
 		}
 		if !config.InsecureSkipVerify && caCertPath != "" {
-			caCert, err := ioutil.ReadFile(caCertPath)
+			caCert, err := os.ReadFile(caCertPath)
 			if err != nil {
 				return nil, err
 			}
-	
+
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(caCert)
 			config.RootCAs = caCertPool
@@ -306,8 +304,8 @@ type LdapInfo struct {
 	DefaultGroupID int    `form:"default_group_id" json:"default_group_id"` // LDAP_DEFAULT_GROUP_ID
 }
 
-// InitInfo Fill LdapInfo structure by values
-func (li *LdapInfo) InitInfo() {
+// Fill Fill LdapInfo structure by values
+func (li *LdapInfo) Fill() {
 	li.Enable = context.BoolOption("LDAP_LOGIN")
 	li.BaseDN = context.StringOption("LDAP_BASE_DN")
 	li.UserFilter = context.StringOption("LDAP_USER_FILTER")
@@ -334,9 +332,9 @@ func TestLDAPConnection(gc *gin.Context) {
 		return
 	}
 
-	connection, err := createLDAPConnectionInt(form.URL, form.TLS, 
+	connection, err := createLDAPConnectionInt(form.URL, form.TLS,
 		form.TLSNoVerify, form.TLSCertPath, form.TLSKeyPath, form.TLSCaCertPath)
-	if err != nil {		
+	if err != nil {
 		context.CaptureExceptionFromGin(gc, err, gin.IsDebugging())
 		gc.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
