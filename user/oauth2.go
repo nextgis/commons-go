@@ -347,6 +347,10 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 		ui.Roles = append(ui.Roles, v.(string))
 	}
 
+	if gin.IsDebugging() {
+		fmt.Printf("User roles from user info: %v\n", ui.Roles)
+	}
+
 	// if val, ok := claims["resource_access"]; ok {
 	// 	valM := val.(map[string]interface{})
 	// 	if clientVal, ok := valM[context.StringOption("OAUTH2_CLIENT_ID")]; ok {

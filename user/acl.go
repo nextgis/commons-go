@@ -42,7 +42,7 @@ func IsCookieAuth(gc *gin.Context) bool {
 // IsBasicAuth Check if this is basic authentication
 func IsBasicAuth(gc *gin.Context) bool {
 	auth := strings.SplitN(gc.Request.Header.Get("Authorization"), " ", 2)
-	if len(auth) == 2 && auth[0] == "Basic" {
+	if len(auth) == 2 && strings.EqualFold(auth[0], "Basic") {
 		return true
 	}
 
@@ -59,7 +59,7 @@ func IsAPIKeyAuth(gc *gin.Context) bool {
 func IsOAuth2(gc *gin.Context) bool {
 	// Check header
 	auth := strings.SplitN(gc.Request.Header.Get("Authorization"), " ", 2)
-	if len(auth) > 1 && auth[0] == "Bearer" {
+	if len(auth) > 1 && strings.EqualFold(auth[0], "Bearer") {
 		return true
 	}
 
@@ -73,10 +73,10 @@ func IsOAuth2(gc *gin.Context) bool {
 func AuthenticationRequired() gin.HandlerFunc {
 	return func(gc *gin.Context) {
 		if IsAPIKeyAuth(gc) || IsCookieAuth(gc) || IsBasicAuth(gc) || IsOAuth2(gc) {
+			gc.Next()
+		} else {
 			gc.AbortWithStatusJSON(http.StatusUnauthorized,
-				gin.H{"error": "User needs to be signed in to access this service"})
-			return
+				gin.H{"error": "user needs to be signed in to access this service"})
 		}
-		gc.Next()
 	}
 }
