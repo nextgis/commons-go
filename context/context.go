@@ -189,6 +189,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("OAUTH2_UPDATE_GROUPS", false)
 	SetDefaultOption("OAUTH2_TOKEN_CACHE_TTL", 3600)
 	SetDefaultOption("OAUTH2_LOGOUT_ENDPOINT", "")
+	SetDefaultOption("OAUTH2_GROUPS_JWT_KEY", "resource_access/{client_id}/roles")
 
 	// Local
 	SetDefaultOption("LOCAL_LOGIN", true)

@@ -91,6 +91,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "given_name")
 			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "family_name")
 			context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
+			context.SetStringOption("OAUTH2_GROUPS_JWT_KEY", oi.GroupsJWTKey)
 		}
 	} else {
 		// if len(oi.TokenEndpoint) > 0 {
@@ -126,6 +127,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 		} else {
 			context.SetStringOption("OAUTH2_SCOPE", "")
 		}
+		context.SetStringOption("OAUTH2_GROUPS_JWT_KEY", oi.GroupsJWTKey)
 	}
 }
 

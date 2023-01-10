@@ -31,6 +31,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -150,6 +151,7 @@ type OAuth2Info struct {
 	UpdateGroups          bool   `form:"update_groups" json:"update_groups"`                   // OAUTH2_UPDATE_GROUPS
 	UserAutocreate        bool   `form:"user_autocreate" json:"user_autocreate"`               // OAUTH2_USER_AUTOCREATE
 	LogoutEndpoint        string `form:"logout_endpoint" json:"logout_endpoint"`               // OAUTH2_LOGOUT_ENDPOINT
+	GroupsJWTKey          string `form:"groups_jwt_key" json:"groups_jwt_key"`                 // OAUTH2_GROUPS_JWT_KEY
 }
 
 // Fill Init OAuth2 Information
@@ -172,10 +174,11 @@ func (oi *OAuth2Info) Fill() {
 	oi.UpdateGroups = context.BoolOption("OAUTH2_UPDATE_GROUPS")
 	oi.UserAutocreate = context.BoolOption("OAUTH2_USER_AUTOCREATE")
 	oi.LogoutEndpoint = context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
+	oi.GroupsJWTKey = context.StringOption("OAUTH2_GROUPS_JWT_KEY")
 }
 
 type errorBody struct {
-	Error string `json:"error"`
+	Error     string `json:"error"`
 	ErrorDesc string `json:"error_description"`
 }
 
@@ -220,11 +223,11 @@ func OAuth2Logout(token *TokenJSON) error {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("logout failed. Return status code is %d, Body: %s", 
+		err := fmt.Errorf("logout failed. Return status code is %d, Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return err
-	}	
+	}
 	return nil
 }
 
@@ -238,7 +241,7 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	}
 
 	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	
+
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -285,7 +288,6 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 	return getToken(data)
 }
 
-
 // GetTokenByClientSecret Get access token for client id and client secret
 func GetTokenByClientSecret() (*TokenJSON, error) {
 	data := url.Values{}
@@ -310,18 +312,6 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	if val, ok := claims[context.StringOption("OAUTH2_PROFILE_LASTNAME_ATTR")]; ok {
 		ui.LastName = val.(string)
 	}
-	if val, ok := claims["resource_access"]; ok {
-		valM := val.(map[string]interface{})
-		if clientVal, ok := valM[context.StringOption("OAUTH2_CLIENT_ID")]; ok {
-			clientValM := clientVal.(map[string]interface{})
-			if roles, ok := clientValM["roles"]; ok {
-				rolesA := roles.([]interface{})
-				for _, v := range rolesA {
-					ui.Roles = append(ui.Roles, v.(string))
-				}
-			}
-		}
-	}
 
 	// NextGIS ID specific
 	if val, ok := claims["locale"]; ok {
@@ -333,6 +323,43 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	if val, ok := claims["email_confirmed"]; ok {
 		ui.EmailConfirmed = val.(bool)
 	}
+
+	// Get roles
+	groupItems := strings.Split(context.StringOption("OAUTH2_GROUPS_JWT_KEY"), "/")
+
+	var roles []interface{}
+	for _, groupItem := range groupItems {
+		if strings.EqualFold(groupItem, "{client_id}") {
+			groupItem = context.StringOption("OAUTH2_CLIENT_ID")
+		}
+		if val, ok := claims[groupItem]; ok {
+			if claims, ok = val.(map[string]interface{}); !ok {
+				if roles, ok = val.([]interface{}); ok {
+					break
+				} else {
+					context.CaptureException(fmt.Errorf("cannot find roles in JWT. Stop at %s", groupItem), gin.IsDebugging())
+				}
+			}
+		}
+	}
+
+	for _, v := range roles {
+		ui.Roles = append(ui.Roles, v.(string))
+	}
+
+	// if val, ok := claims["resource_access"]; ok {
+	// 	valM := val.(map[string]interface{})
+	// 	if clientVal, ok := valM[context.StringOption("OAUTH2_CLIENT_ID")]; ok {
+	// 		clientValM := clientVal.(map[string]interface{})
+	// 		if roles, ok := clientValM["roles"]; ok {
+	// 			rolesA := roles.([]interface{})
+	// 			for _, v := range rolesA {
+	// 				ui.Roles = append(ui.Roles, v.(string))
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	return ui
 }
 
@@ -344,8 +371,8 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 		return context.StringOption("OAUTH2_VALIDATE_KEY"), nil
 	})
 	// if err != nil {
-		// TODO: Handle error
-		// context.CaptureException(err, gin.IsDebugging())
+	// TODO: Handle error
+	// context.CaptureException(err, gin.IsDebugging())
 	// }
 
 	var ui UserInfo
@@ -384,7 +411,7 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("failed to get user_info. Return status code is %d. Body: %s", 
+		err := fmt.Errorf("failed to get user_info. Return status code is %d. Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return ui, err
@@ -435,7 +462,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to get token introspection. Return status code is %d, Body: %s", 
+		err := fmt.Errorf("failed to get token introspection. Return status code is %d, Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
@@ -611,7 +638,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	}
 
 	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	
+
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -620,7 +647,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s", 
+		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s",
 			response.StatusCode, getErrorDescription(bodyBytes))
 		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
