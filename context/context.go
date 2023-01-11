@@ -156,6 +156,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("SESSION_KEY", "secret")
 	SetDefaultOption("TOKEN_CACHE_SIZE", 1024)
 	SetDefaultOption("TIMEOUT", 180) // Timeout to get remote data
+	SetDefaultOption("FILE_TIMEOUT", 1800) // Timeout to get remote data
 	SetDefaultOption("SESSION_MAX_AGE", sessionMaxAge)
 	SetDefaultOption("HTTP_SKIP_SSL_VERIFY", false)
 

@@ -33,7 +33,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -211,6 +210,53 @@ func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 	return str
 }
 
+// GetRemoteFile Get remote data with big timeout and write to file
+func GetRemoteFile(url, username, password string, addHeaders map[string]string, outPath string) error {
+	// https://golangdocs.com/golang-download-files
+	if gin.IsDebugging() {
+		fmt.Printf("Get remote file: %s\n", url)
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
+	var netClient = &http.Client{
+		Transport: tr,
+		Timeout: time.Second * time.Duration(context.IntOption("FILE_TIMEOUT")),
+	}
+
+	// Create blank file
+	file, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	setupRequest(req, username, password, addHeaders)
+	response, err := netClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	// Sometimes get 204
+	if response.StatusCode > 399 {
+		return fmt.Errorf("failed to get %s. Return status code is %d", url, response.StatusCode)
+	}
+
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetRemoteSmallFile Get remote data with timeout and write to file
 func GetRemoteSmallFile(url, username, password string, addHeaders map[string]string, outPath string) (int, error) {
 	b, code, err := GetRemoteBytes(url, username, password, addHeaders)
@@ -219,7 +265,7 @@ func GetRemoteSmallFile(url, username, password string, addHeaders map[string]st
 	}
 
 	code = http.StatusCreated
-	err = ioutil.WriteFile(outPath, b, 0644)
+	err = os.WriteFile(outPath, b, 0644)
 	if err != nil {
 		code = http.StatusInternalServerError
 	}
@@ -285,7 +331,7 @@ func PostRemoteSmallFile(url, username, password string, addHeaders map[string]s
 	}
 	defer response.Body.Close()
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 
 	// Sometimes get 204
 	if response.StatusCode > 399 {
@@ -342,7 +388,7 @@ func GetRemoteBytes(url, username, password string, addHeaders map[string]string
 		return nil, response.StatusCode, fmt.Errorf("failed to get %s. Return status code is %d", url, response.StatusCode)
 	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 
 	if err != nil {
 		return nil, response.StatusCode, err
@@ -398,7 +444,7 @@ func sendRemoteBytes(requestType, url, username, password string, addHeaders map
 		return nil, response.StatusCode, fmt.Errorf("failed to send %s. Return status code is %d", url, response.StatusCode)
 	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 
 	if err != nil {
 		return nil, response.StatusCode, err
