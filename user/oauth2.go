@@ -49,6 +49,12 @@ const (
 	CustomAuthType = 3
 )
 
+const (
+	NextGISPlanFree    = 0
+	NextGISPlanMini    = 1
+	NextGISPlanPremium = 2
+)
+
 // TokenJSON Token information
 type TokenJSON struct {
 	AccessToken  string `json:"access_token"`
@@ -95,6 +101,8 @@ type UserInfo struct {
 	Locale         string   `json:"locale"`
 	Email          string   `json:"email"`
 	EmailConfirmed bool     `json:"email_confirmed"`
+	Plan           int      `json:"subscription_plan"`
+	WebGISList     []string `json:"available_webgises"`
 	Roles          []string `json:"roles"`
 }
 
@@ -322,6 +330,18 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	}
 	if val, ok := claims["email_confirmed"]; ok {
 		ui.EmailConfirmed = val.(bool)
+	}
+	if val, ok := claims["subscription_plan"]; ok {
+		ui.Plan = NextGISPlanFree
+		valStr := val.(string)
+		if strings.EqualFold(valStr, "premium") {
+			ui.Plan = NextGISPlanPremium
+		} else if strings.EqualFold(valStr, "mini") {
+			ui.Plan = NextGISPlanMini
+		}
+	}
+	if val, ok := claims["available_webgises"]; ok {
+		ui.WebGISList = val.([]string)
 	}
 
 	// Get roles
