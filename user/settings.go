@@ -66,7 +66,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", endpoint + "/oauth2/authorize/")
 			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", endpoint + "/oauth2/introspect/")
 			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/api/v1/user_info/")
-			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/api/v1/logout/")
+			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/logout/") // /api/v1/logout/
 
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "nextgis_guid")
 			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "username")
