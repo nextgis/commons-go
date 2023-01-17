@@ -631,7 +631,7 @@ func OAuth2Options(gc *gin.Context) {
 		Enabled:       context.BoolOption("OAUTH2_LOGIN"),
 		OAuthEndPoint: context.StringOption("OAUTH2_AUTH_ENDPOINT"),
 		ClientID:      context.StringOption("OAUTH2_CLIENT_ID"),
-		AltLogins:     context.BoolOption("LDAP_LOGIN") || context.BoolOption("LOCAL_LOGIN"),
+		AltLogins:     context.BoolOption("LOCAL_LOGIN"), // context.BoolOption("LDAP_LOGIN") || 
 		Scope:         context.StringOption("OAUTH2_SCOPE"),
 	}
 	gc.JSON(http.StatusOK, options)
