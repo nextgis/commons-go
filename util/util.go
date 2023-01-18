@@ -434,7 +434,7 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
+			response.StatusCode, GetErrorDescription(bodyBytes))
 		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
 	}
@@ -508,7 +508,8 @@ type errorBody struct {
 	ErrorDesc string `json:"error_description"`
 }
 
-func getErrorDescription(bodyBytes []byte) string {
+// GetErrorDescription get error from body
+func GetErrorDescription(bodyBytes []byte) string {
 	var b errorBody
 	err := json.Unmarshal(bodyBytes, &b)
 	if err != nil {

@@ -186,23 +186,6 @@ func (oi *OAuth2Info) Fill() {
 	oi.GroupsJWTKey = context.StringOption("OAUTH2_GROUPS_JWT_KEY")
 }
 
-type errorBody struct {
-	Error     string `json:"error"`
-	ErrorDesc string `json:"error_description"`
-}
-
-func getErrorDescription(bodyBytes []byte) string {
-	var b errorBody
-	err := json.Unmarshal(bodyBytes, &b)
-	if err != nil {
-		return string(bodyBytes)
-	}
-	if len(b.ErrorDesc) > 0 {
-		return b.ErrorDesc
-	}
-	return b.Error
-}
-
 // Keycloak configuration URL
 // http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
 
@@ -303,6 +286,7 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	}
 
 	// NextGIS ID specific
+	// claims map[available_webgises:[https://test-premium.nextgis.com] first_name:NextGIS last_name:Team nextgis_guid:efd7d8be-5f4e-453f-980b-238e46e2eb6a username:test.premium]
 	if val, ok := claims["locale"]; ok {
 		ui.Locale = val.(string)
 	}
@@ -322,7 +306,10 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 		}
 	}
 	if val, ok := claims["available_webgises"]; ok {
-		ui.WebGISList = val.([]string)
+		valArr := val.([]interface{})
+		for _, valItem := range valArr {
+			ui.WebGISList = append(ui.WebGISList, valItem.(string))
+		}
 	}
 
 	// Get roles
@@ -397,10 +384,6 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 		return ui, err
 	}
 
-	if gin.IsDebugging() {
-		fmt.Printf("user info response: %s\nclaims %v\n", string(bodyBytes), claims)
-	}
-
 	return unmarshalUserInfo(claims), nil
 }
 
@@ -434,7 +417,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
 		err := fmt.Errorf("failed to get token introspection. Return status code is %d, Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
+			response.StatusCode, util.GetErrorDescription(bodyBytes))
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
