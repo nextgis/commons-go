@@ -404,7 +404,7 @@ func PostRemoteBytes(url, username, password string, addHeaders map[string]strin
 }
 
 // PostRemoteForm Post remote form with timeout
-func PostRemoteForm(url, username, password string, addHeaders map[string]string, data url.Values) (resp *http.Response, err error) {
+func PostRemoteForm(url, username, password string, addHeaders map[string]string, data url.Values) ([]byte, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
 	}
@@ -425,7 +425,26 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 	setupRequest(req, username, password, addHeaders)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	return netClient.Do(req)
+	response, err := netClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s",
+			response.StatusCode, getErrorDescription(bodyBytes))
+		// sentry.CaptureException(err) -- don't waste sentry
+		return nil, err
+	}
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		err := fmt.Errorf("failed to refresh token. %s", err.Error())
+		context.CaptureException(err, gin.IsDebugging())
+		return nil, err
+	}
+	return bodyBytes, nil
 }
 
 // PutRemoteBytes Put remote data with timeout
@@ -482,4 +501,21 @@ func sendRemoteBytes(requestType, url, username, password string, addHeaders map
 // IsZeroTime Check if time is not init
 func IsZeroTime(t time.Time) bool {
 	return t.Year() < 1000
+}
+
+type errorBody struct {
+	Error     string `json:"error"`
+	ErrorDesc string `json:"error_description"`
+}
+
+func getErrorDescription(bodyBytes []byte) string {
+	var b errorBody
+	err := json.Unmarshal(bodyBytes, &b)
+	if err != nil {
+		return string(bodyBytes)
+	}
+	if len(b.ErrorDesc) > 0 {
+		return b.ErrorDesc
+	}
+	return b.Error
 }

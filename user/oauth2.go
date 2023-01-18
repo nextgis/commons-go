@@ -224,20 +224,13 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 
 	// response, err := netClient.PostForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), data)
-	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), "", "", headers, data)
+	_, err := util.PostRemoteForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), "", "", headers, data)
 	if err != nil {
 		err := fmt.Errorf("failed to logout. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusNoContent {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("logout failed. Return status code is %d, Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return err
-	}
+
 	return nil
 }
 
@@ -252,22 +245,7 @@ func getToken(data url.Values) (*TokenJSON, error) {
 // 
 	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 
-	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
-	if err != nil {
-		err := fmt.Errorf("failed to get access token. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to get access token. Return status code is %d. Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-
-	bodyBytes, err := io.ReadAll(response.Body)
+	bodyBytes, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -360,7 +338,8 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 				if roles, ok = val.([]interface{}); ok {
 					break
 				} else {
-					context.CaptureException(fmt.Errorf("cannot find roles in JWT. Stop at %s", groupItem), gin.IsDebugging())
+					context.CaptureException(
+						fmt.Errorf("cannot find roles in JWT. Stop at %s", groupItem), gin.IsDebugging())
 				}
 			}
 		}
@@ -373,19 +352,6 @@ func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
 	if gin.IsDebugging() {
 		fmt.Printf("User roles from user info: %v\n", ui.Roles)
 	}
-
-	// if val, ok := claims["resource_access"]; ok {
-	// 	valM := val.(map[string]interface{})
-	// 	if clientVal, ok := valM[context.StringOption("OAUTH2_CLIENT_ID")]; ok {
-	// 		clientValM := clientVal.(map[string]interface{})
-	// 		if roles, ok := clientValM["roles"]; ok {
-	// 			rolesA := roles.([]interface{})
-	// 			for _, v := range rolesA {
-	// 				ui.Roles = append(ui.Roles, v.(string))
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	return ui
 }
@@ -414,35 +380,9 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 	}
 
 	// Get user info
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
-	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_USERINFO_ENDPOINT"), nil)
-	if err != nil {
-		err := fmt.Errorf("failed to prepare user_info request. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return ui, err
-	}
-	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
-
-	response, err := netClient.Do(req)
-	if err != nil {
-		err := fmt.Errorf("failed to get user_info. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return ui, err
-	}
-	defer response.Body.Close()
-	bodyBytes, err := io.ReadAll(response.Body)
-	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("failed to get user_info. Return status code is %d. Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return ui, err
-	}
+	bodyBytes, _, err := util.GetRemoteBytes(
+		context.StringOption("OAUTH2_USERINFO_ENDPOINT"), "access_token", 
+		token.TokenType+" "+token.AccessToken, map[string]string{}) 
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -455,6 +395,10 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 		err := fmt.Errorf("failed to parse user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return ui, err
+	}
+
+	if gin.IsDebugging() {
+		fmt.Printf("user info response: %s\nclaims %v\n", string(bodyBytes), claims)
 	}
 
 	return unmarshalUserInfo(claims), nil
@@ -513,36 +457,9 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 
 // GetSupportInfo Get support information
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
-	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", nil)
-	if err != nil {
-		err := fmt.Errorf("failed to prepare support_info request. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	req.Header.Add("Authorization", token.TokenType+" "+token.AccessToken)
-
-	response, err := netClient.Do(req)
-	if err != nil {
-		err := fmt.Errorf("failed to get support_info. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to get support_info. Return status code is %d. Body %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	bodyBytes, err := io.ReadAll(response.Body)
+	bodyBytes, _, err := util.GetRemoteBytes(
+		context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", 
+		"access_token", token.TokenType+" "+token.AccessToken, map[string]string{})
 	if err != nil {
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, fmt.Errorf("failed to get support_info. %s", err.Error())
@@ -567,37 +484,11 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
-	req, err := http.NewRequest("GET", context.StringOption("OAUTH2_ENDPOINT")+
-		"/api/v1/integration/user_info/"+ngID+
-		"?client_id="+context.StringOption("OAUTH2_CLIENT_ID")+
-		"&client_secret="+context.StringOption("OAUTH2_CLIENT_SECRET"), nil)
-	if err != nil {
-		err := fmt.Errorf("failed to prepare integration/user_info request. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	response, err := netClient.Do(req)
-	if err != nil {
-		err := fmt.Errorf("failed to get integration/user_info. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to get integration/user_info. Return status code is %d. Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	bodyBytes, err := io.ReadAll(response.Body)
+	URL := context.StringOption("OAUTH2_ENDPOINT")+
+	"/api/v1/integration/user_info/"+ngID+
+	"?client_id="+context.StringOption("OAUTH2_CLIENT_ID")+
+	"&client_secret="+context.StringOption("OAUTH2_CLIENT_SECRET")
+	bodyBytes, _, err := util.GetRemoteBytes(URL, "", "", map[string]string{})
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -665,21 +556,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	}
 
 	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
-	if err != nil {
-		err := fmt.Errorf("failed to refresh token. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s",
-			response.StatusCode, getErrorDescription(bodyBytes))
-		// sentry.CaptureException(err) -- don't waste sentry
-		return nil, err
-	}
-	bodyBytes, err := io.ReadAll(response.Body)
+	bodyBytes, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
