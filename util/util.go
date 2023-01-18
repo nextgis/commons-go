@@ -35,6 +35,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -400,6 +401,31 @@ func GetRemoteBytes(url, username, password string, addHeaders map[string]string
 // PostRemoteBytes Post remote data with timeout
 func PostRemoteBytes(url, username, password string, addHeaders map[string]string, data interface{}) ([]byte, int, error) {
 	return sendRemoteBytes("POST", url, username, password, addHeaders, data)
+}
+
+// PostRemoteForm Post remote form with timeout
+func PostRemoteForm(url, username, password string, addHeaders map[string]string, data url.Values) (resp *http.Response, err error) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
+	var netClient = &http.Client{
+		Transport: tr,
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	}
+
+	if gin.IsDebugging() {
+		fmt.Printf("PostForm tp remote url: %s. Data %v\n", url, data)
+	}
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	setupRequest(req, username, password, addHeaders)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	return netClient.Do(req)
 }
 
 // PutRemoteBytes Put remote data with timeout

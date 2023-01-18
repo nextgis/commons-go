@@ -38,6 +38,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/nextgis/commons-go/context"
+	"github.com/nextgis/commons-go/util"
 )
 
 const (
@@ -206,23 +207,24 @@ func getErrorDescription(bodyBytes []byte) string {
 // http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
 
 // OAuth2Logout Logout from oauth
-func OAuth2Logout(token *TokenJSON) error {
+func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 	// https://www.keycloak.org/docs/latest/securing_apps/index.html#logout
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
+	// tr := &http.Transport{
+	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	// }
+	// var netClient = &http.Client{
+	// 	Transport: tr,
+	// 	Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	// }
 
 	data := url.Values{}
 	data.Set("refresh_token", token.RefreshToken)
 	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
 	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), data)
+	// response, err := netClient.PostForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), data)
+	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), "", "", headers, data)
 	if err != nil {
 		err := fmt.Errorf("failed to logout. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -240,16 +242,17 @@ func OAuth2Logout(token *TokenJSON) error {
 }
 
 func getToken(data url.Values) (*TokenJSON, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
+	// tr := &http.Transport{
+	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	// }
+	// var netClient = &http.Client{
+	// 	Transport: tr,
+	// 	Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	// }
+// 
+	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-
+	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -639,13 +642,13 @@ func OAuth2Options(gc *gin.Context) {
 
 // RefreshToken Refresh access token
 func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
+	// tr := &http.Transport{
+	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	// }
+	// var netClient = &http.Client{
+	// 	Transport: tr,
+	// 	Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
+	// }
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", token.RefreshToken)
@@ -661,8 +664,8 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		data.Set("scope", fullScope)
 	}
 
-	response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-
+	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
+	response, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
