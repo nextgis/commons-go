@@ -7,7 +7,7 @@
  * Last Modified: Wednesday, 28th December 2022 5:59:48 pm
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2022 NextGIS, <info@nextgis.com>
+ * Copyright 2019 - 2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -35,6 +35,29 @@ import (
 type LockMutex struct {
 	locker sync.Mutex
 	expire time.Time
+	isLocked bool
+}
+
+func (lm *LockMutex) lock(exp time.Time) {
+	lm.locker.Lock()
+	lm.isLocked = true
+	lm.expire = exp
+}
+
+func (lm *LockMutex) unlock() {
+	if lm.isLocked {
+		lm.locker.Unlock()
+	}
+	lm.isLocked = false
+}
+
+func (lm *LockMutex) trylock(exp time.Time) bool {
+	if lm.locker.TryLock() {
+		lm.isLocked = true
+		lm.expire = exp
+		return true
+	}
+	return false
 }
 
 // LockCache lock cache with expire support
@@ -76,7 +99,7 @@ func (lc *LockCache[K]) Free() {
 
 	for k, v := range lc.data {
 		if v.expire.Before(now) {
-			v.locker.Unlock()
+			v.unlock()
 			delete(lc.data, k)
 		}
 	}
@@ -89,8 +112,7 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 	}
 	t := time.Now().Add(duration)
 	if val, ok := lc.Get(key); ok {
-		if ret := val.locker.TryLock(); ret {
-			val.expire = t
+		if ret := val.trylock(t); ret {
 			return true
 		}
 		return false
@@ -100,7 +122,7 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 		locker: sync.Mutex{},
 		expire: t,
 	}
-	m.locker.Lock()
+	m.lock(t)
 
 	lc.Set(key, m)
 	return true
@@ -109,7 +131,7 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 // Unlock unlock by key
 func (lc *LockCache[K]) Unlock(key K) {
 	if val, ok := lc.Get(key); ok {
-		val.locker.Unlock()
+		val.unlock()
 	}
 }
 
@@ -120,8 +142,7 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 	}
 	t := time.Now().Add(duration)
 	if val, ok := lc.Get(key); ok {
-		val.expire = t
-		val.locker.Lock()
+		val.lock(t)
 	} else {
 		m := &LockMutex{
 			locker: sync.Mutex{},
@@ -129,6 +150,6 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 		}
 
 		lc.Set(key, m)
-		m.locker.Lock()
+		m.lock(t)
 	}
 }
