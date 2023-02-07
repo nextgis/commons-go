@@ -113,7 +113,7 @@ func Contains[K comparable](a []K, x K) bool {
 func DeleteEmptyStrings(s []string) []string {
     var r []string
     for _, str := range s {
-        if len(str) == 0 {
+        if len(str) != 0 {
             r = append(r, str)
         }
     }
