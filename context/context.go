@@ -304,6 +304,10 @@ func SetupConfig(appname string) {
 
 // InitSentry initialize Sentry
 func InitSentry(release string) gin.HandlerFunc {
+	if len(release) == 0 {
+		release = fmt.Sprintf("%s@%s", appNameInt, appVersionInt)
+	}
+
 	dsn := StringOption("SENTRY_DSN")
 	if len(dsn) == 0 {
 		return func(gc *gin.Context) {
