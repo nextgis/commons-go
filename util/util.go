@@ -520,3 +520,7 @@ func GetErrorDescription(bodyBytes []byte) string {
 	}
 	return b.Error
 }
+// GetUA return user agent
+func GetUA() string {
+	return fmt.Sprintf("%s/%s", context.GetAppName(), context.GetAppVersion())
+}

@@ -7,7 +7,7 @@
  * Last Modified: Sunday, 20th September 2020 1:03:19 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
+ * Copyright 2019 - 2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -148,8 +148,24 @@ func WriteConfig() error {
 	return viper.WriteConfig()
 }
 
+var appNameInt string
+var appVersionInt string
+
+// GetAppName return application name
+func GetAppName() string {
+	return appNameInt
+}
+
+// GetAppVersion return application version
+func GetAppVersion() string {
+	return appVersionInt
+}
+
 // SetDefaults Set application defaults
-func SetDefaults(appname string) {
+func SetDefaults(appName, appVersion string) {
+	appNameInt = appName
+	appVersionInt = appVersion
+
 	// Common
 	SetDefaultOption("DEBUG", true)
 	SetDefaultOption("ADMIN_PASSWORD", "admin")
@@ -166,7 +182,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("LDAP_URL", "")
 	SetDefaultOption("LDAP_USER_FILTER", "(objectClass=posixAccount)")
 	SetDefaultOption("LDAP_USER_ATTR", "uid")
-	SetDefaultOption("LDAP_GROUP_FILTER", fmt.Sprintf("(cn=%s)", appname))
+	SetDefaultOption("LDAP_GROUP_FILTER", fmt.Sprintf("(cn=%s)", appName))
 	SetDefaultOption("LDAP_GROUP_ATTR", "memberUid")
 	SetDefaultOption("LDAP_DEFAULT_GROUP_ID", 0)
 	SetDefaultOption("LDAP_UPDATE_GROUPS", false)
@@ -199,7 +215,7 @@ func SetDefaults(appname string) {
 	SetDefaultOption("LOG_ONLY_EDITS", false)
 	SetDefaultOption("ADMIN_GROUP_NAME", "Administrators")
 
-	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appname)
+	ContextKey = fmt.Sprintf("github.com/nextgis/%s/context", appName)
 }
 
 // CreateSession Create new session and return handler.
