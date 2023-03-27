@@ -7,7 +7,7 @@
  * Last Modified: Sunday, 20th September 2020 1:04:44 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2021 NextGIS, <info@nextgis.com>
+ * Copyright 2019 - 2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -186,29 +186,45 @@ func FileExists(filename string) bool {
 func QueryParameterString(gc *gin.Context, name, defaultVal string) string {
 	queryParameters := gc.Request.URL.Query()
 
-	str := defaultVal
+	out := defaultVal
 	if val, ok := queryParameters[name]; ok {
 		if len(val) > 0 {
-			str = val[0]
+			out = val[0]
 		}
 	}
-	return str
+	return out
 }
 
 // QueryParameterInt Return query parameter as Int or default value
 func QueryParameterInt(gc *gin.Context, name string, defaultVal int) int {
 	queryParameters := gc.Request.URL.Query()
 
-	str := defaultVal
+	out := defaultVal
 	if val, ok := queryParameters[name]; ok {
 		if len(val) > 0 {
 			v, err := strconv.ParseInt(val[0], 0, 0)
 			if err == nil {
-				str = int(v)
+				out = int(v)
 			}
 		}
 	}
-	return str
+	return out
+}
+
+// QueryParameterFloat Return query parameter as Float or default value
+func QueryParameterFloat(gc *gin.Context, name string, defaultVal float64) float64 {
+	queryParameters := gc.Request.URL.Query()
+
+	out := defaultVal
+	if val, ok := queryParameters[name]; ok {
+		if len(val) > 0 {
+			v, err := strconv.ParseFloat(val[0], 64)
+			if err == nil {
+				out = v
+			}
+		}
+	}
+	return out
 }
 
 // GetRemoteFile Get remote data with big timeout and write to file
