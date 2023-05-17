@@ -92,15 +92,18 @@ func (lc *LockCache[K]) Set(key K, m *LockMutex) {
 
 // Free free unused resources
 func (lc *LockCache[K]) Free() {
-	lc.locker.RLock()
-	defer lc.locker.RUnlock()
+	lc.locker.Lock()
+	defer lc.locker.Unlock()
 
 	now := time.Now()
 
 	for k, v := range lc.data {
 		if v.expire.Before(now) {
+			isLocked := v.isLocked
 			v.unlock()
-			delete(lc.data, k)
+			if !isLocked {
+				delete(lc.data, k)
+			}
 		}
 	}
 }
@@ -122,8 +125,8 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 		locker: sync.Mutex{},
 		expire: t,
 	}
-	m.lock(t)
 
+	m.lock(t)
 	lc.Set(key, m)
 	return true
 }
@@ -149,7 +152,7 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 			expire: t,
 		}
 
-		lc.Set(key, m)
 		m.lock(t)
+		lc.Set(key, m)
 	}
 }

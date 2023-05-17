@@ -230,6 +230,34 @@ func getLDAPGroups(userDN *ldap.Entry, conn *ldap.Conn) []string {
 	return groups
 }
 
+func getLDAPNames(dn *ldap.Entry) (userName, firstName, lastName string) {
+	userName = dn.GetEqualFoldAttributeValue("cn")
+	firstName = dn.GetEqualFoldAttributeValue("givenname")
+	lastName = dn.GetEqualFoldAttributeValue("sn")
+
+	if len(userName) == 0 {
+		if len(firstName) > 0 {
+			userName = firstName
+		}
+		if len(lastName) > 0 {
+			if len(userName) > 0 {
+				userName += " "
+			}
+			userName += lastName
+		}
+	} else {
+		parts := strings.Split(userName, " ")
+		if len(firstName) == 0 && len(parts) > 0 {
+			firstName = parts[0]
+		}
+		if len(lastName) == 0 && len(parts) > 1 {
+			lastName = parts[1]
+		}
+	}
+
+	return
+}
+
 // GetLDAPUserDetails Get LDAP user details
 func GetLDAPUserDetails(username string, password string) (UserInfo, error) {
 	var ui UserInfo
@@ -274,13 +302,16 @@ func GetLDAPUserDetails(username string, password string) (UserInfo, error) {
 	}
 
 	ui.Roles = userGroups
-	ui.Email = userDN.GetAttributeValue("mail")
-	ui.EmailConfirmed = true
-	ui.Username = userDN.GetAttributeValue("cn")
-	ui.FirstName = userDN.GetAttributeValue("givenname")
-	ui.LastName = userDN.GetAttributeValue("sn")
-	ui.ID = userDN.GetAttributeValue("uidnumber")
+	ui.Email = userDN.GetEqualFoldAttributeValue("mail")
+	ui.EmailConfirmed = true // Expected confirm email in LDAP
+	ui.ID = userDN.GetEqualFoldAttributeValue("uidnumber")
 	ui.Locale = context.StringOption("DEFAULT_LANGUAGE")
+
+	userName, firstName, lastName := getLDAPNames(userDN)
+
+	ui.Username = userName
+	ui.FirstName = firstName
+	ui.LastName = lastName
 
 	return ui, nil
 }
