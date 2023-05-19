@@ -7,7 +7,7 @@
  * Last Modified: Wednesday, 28th December 2022 5:59:48 pm
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2023 NextGIS, <info@nextgis.com>
+ * Copyright 2019-2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -92,7 +92,9 @@ func (lc *LockCache[K]) Set(key K, m *LockMutex) {
 
 // Free free unused resources
 func (lc *LockCache[K]) Free() {
-	lc.locker.Lock()
+	if !lc.locker.TryLock() {
+		return
+	}
 	defer lc.locker.Unlock()
 
 	now := time.Now()
@@ -114,7 +116,13 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 		duration = time.Second * time.Duration(context.IntOption("TIMEOUT")*5)
 	}
 	t := time.Now().Add(duration)
-	if val, ok := lc.Get(key); ok {
+
+	if !lc.locker.TryLock() {
+		return false
+	}
+	defer lc.locker.Unlock()
+
+	if val, ok := lc.data[key]; ok {
 		if ret := val.trylock(t); ret {
 			return true
 		}
@@ -127,13 +135,16 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 	}
 
 	m.lock(t)
-	lc.Set(key, m)
+	lc.data[key] = m
 	return true
 }
 
 // Unlock unlock by key
 func (lc *LockCache[K]) Unlock(key K) {
-	if val, ok := lc.Get(key); ok {
+	lc.locker.Lock()
+	defer lc.locker.Unlock()
+
+	if val, ok := lc.data[key]; ok {
 		val.unlock()
 	}
 }
@@ -144,7 +155,11 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 		duration = time.Second * time.Duration(context.IntOption("TIMEOUT")*5)
 	}
 	t := time.Now().Add(duration)
-	if val, ok := lc.Get(key); ok {
+
+	lc.locker.Lock()
+	defer lc.locker.Unlock()
+
+	if val, ok := lc.data[key]; ok {
 		val.lock(t)
 	} else {
 		m := &LockMutex{
@@ -153,6 +168,6 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 		}
 
 		m.lock(t)
-		lc.Set(key, m)
+		lc.data[key] = m
 	}
 }
