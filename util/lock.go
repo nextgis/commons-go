@@ -25,35 +25,74 @@
 package util
 
 import (
+	"reflect"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/nextgis/commons-go/context"
 )
 
+const mutexLocked = 1
+
 // LockMutex lock mutex with expiration
 type LockMutex struct {
-	locker sync.Mutex
+	locker sync.RWMutex
 	expire time.Time
-	isLocked bool
 }
 
 func (lm *LockMutex) lock(exp time.Time) {
 	lm.locker.Lock()
-	lm.isLocked = true
 	lm.expire = exp
 }
 
 func (lm *LockMutex) unlock() {
-	if lm.isLocked {
+	if lm.isLocked() {
 		lm.locker.Unlock()
 	}
-	lm.isLocked = false
+}
+
+func (lm *LockMutex) isLocked() bool {
+	state := reflect.ValueOf(&lm.locker).Elem().FieldByName("w").FieldByName("state")
+	return state.Int()&mutexLocked == mutexLocked
+
+}
+
+// https://github.com/trailofbits/go-mutexasserts
+func readerCount(rw *sync.RWMutex) int64 {
+	// Look up the address of the readerCount field and use it to create a pointer to an atomic.Int32,
+	// then load the value to return.
+	rc := (*atomic.Int32)(reflect.ValueOf(rw).Elem().FieldByName("readerCount").Addr().UnsafePointer())
+	return int64(rc.Load())
+}
+
+func (lm *LockMutex) isRLocked() bool {
+	return readerCount(&lm.locker) > 0
 }
 
 func (lm *LockMutex) trylock(exp time.Time) bool {
 	if lm.locker.TryLock() {
-		lm.isLocked = true
+		lm.expire = exp
+		return true
+	}
+	return false
+}
+
+
+func (lm *LockMutex) rlock(exp time.Time) {
+	lm.locker.RLock()
+
+	lm.expire = exp
+}
+
+func (lm *LockMutex) runlock() {
+	if lm.isRLocked() {
+		lm.locker.RUnlock()
+	}
+}
+
+func (lm *LockMutex) tryRlock(exp time.Time) bool {
+	if lm.locker.TryRLock() {
 		lm.expire = exp
 		return true
 	}
@@ -69,25 +108,23 @@ type LockCache[K comparable] struct {
 // Init init lock cache
 func (lc *LockCache[K]) Init() {
 	lc.locker.Lock()
-	defer lc.locker.Unlock()
 	lc.data = make(map[K]*LockMutex)
+	lc.locker.Unlock()
 }
 
 // Get get lock mutex
 func (lc *LockCache[K]) Get(key K) (m *LockMutex, ok bool) {
 	lc.locker.RLock()
-	defer lc.locker.RUnlock()
-
 	m, ok = lc.data[key]
+	lc.locker.RUnlock()
 	return
 }
 
 // Set set lock mutex
 func (lc *LockCache[K]) Set(key K, m *LockMutex) {
 	lc.locker.Lock()
-	defer lc.locker.Unlock()
-
 	lc.data[key] = m
+	lc.locker.Unlock()
 }
 
 // Free free unused resources
@@ -95,19 +132,19 @@ func (lc *LockCache[K]) Free() {
 	if !lc.locker.TryLock() {
 		return
 	}
-	defer lc.locker.Unlock()
 
 	now := time.Now()
 
 	for k, v := range lc.data {
 		if v.expire.Before(now) {
-			isLocked := v.isLocked
+			// isLocked := v.isLocked
 			v.unlock()
-			if !isLocked {
+			// if !isLocked {
 				delete(lc.data, k)
-			}
+			// }
 		}
 	}
+	lc.locker.Unlock()
 }
 
 // TryLock try to lock by key
@@ -117,12 +154,7 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 	}
 	t := time.Now().Add(duration)
 
-	if !lc.locker.TryLock() {
-		return false
-	}
-	defer lc.locker.Unlock()
-
-	if val, ok := lc.data[key]; ok {
+	if val, ok := lc.Get(key); ok {
 		if ret := val.trylock(t); ret {
 			return true
 		}
@@ -130,22 +162,51 @@ func (lc *LockCache[K]) TryLock(key K, duration time.Duration) bool {
 	}
 
 	m := &LockMutex{
-		locker: sync.Mutex{},
+		locker: sync.RWMutex{},
 		expire: t,
 	}
 
 	m.lock(t)
-	lc.data[key] = m
+	lc.Set(key, m)
+	return true
+}
+
+
+// TryRLock try to rlock by key
+func (lc *LockCache[K]) TryRLock(key K, duration time.Duration) bool {
+	if duration.Seconds() < 1 {
+		duration = time.Second * time.Duration(context.IntOption("TIMEOUT")*5)
+	}
+	t := time.Now().Add(duration)
+
+	if val, ok := lc.Get(key); ok {
+		if ret := val.tryRlock(t); ret {
+			return true
+		}
+		return false
+	}
+
+	m := &LockMutex{
+		locker: sync.RWMutex{},
+		expire: t,
+	}
+
+	m.lock(t)
+	lc.Set(key, m)
 	return true
 }
 
 // Unlock unlock by key
 func (lc *LockCache[K]) Unlock(key K) {
-	lc.locker.Lock()
-	defer lc.locker.Unlock()
-
-	if val, ok := lc.data[key]; ok {
+	if val, ok := lc.Get(key); ok {
 		val.unlock()
+	}
+}
+
+// RUnlock unlock read mutex by key
+func (lc *LockCache[K]) RUnlock(key K) {
+	if val, ok := lc.Get(key); ok {
+		val.runlock()
 	}
 }
 
@@ -156,18 +217,34 @@ func (lc *LockCache[K]) Lock(key K, duration time.Duration) {
 	}
 	t := time.Now().Add(duration)
 
-	lc.locker.Lock()
-	defer lc.locker.Unlock()
-
-	if val, ok := lc.data[key]; ok {
+	if val, ok := lc.Get(key); ok {
 		val.lock(t)
 	} else {
 		m := &LockMutex{
-			locker: sync.Mutex{},
-			expire: t,
+			locker:   sync.RWMutex{},
 		}
 
 		m.lock(t)
-		lc.data[key] = m
+		lc.Set(key, m)
+	}
+}
+
+
+// Lock lock by key
+func (lc *LockCache[K]) RLock(key K, duration time.Duration) {
+	if duration.Seconds() < 1 {
+		duration = time.Second * time.Duration(context.IntOption("TIMEOUT")*5)
+	}
+	t := time.Now().Add(duration)
+
+	if val, ok := lc.Get(key); ok {
+		val.rlock(t)
+	} else {
+		m := &LockMutex{
+			locker:   sync.RWMutex{},
+		}
+
+		m.rlock(t)
+		lc.Set(key, m)
 	}
 }
