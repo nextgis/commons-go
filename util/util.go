@@ -430,7 +430,7 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 	}
 
 	if gin.IsDebugging() {
-		fmt.Printf("PostForm tp remote url: %s. Data %v\n", url, data)
+		fmt.Printf("PostForm to remote url: %s. Data %v\n", url, data)
 	}
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))

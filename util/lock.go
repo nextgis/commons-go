@@ -81,7 +81,6 @@ func (lm *LockMutex) trylock(exp time.Time) bool {
 
 func (lm *LockMutex) rlock(exp time.Time) {
 	lm.locker.RLock()
-
 	lm.expire = exp
 }
 

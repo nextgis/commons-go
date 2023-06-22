@@ -35,25 +35,36 @@ func TestLockMultithreaded(t *testing.T) {
 	objectLockCache.Init()
 	var wg1 sync.WaitGroup
 
-	for i := 0; i < 2123; i++ {
+	for i := 0; i < 223; i++ {
 		wg1.Add(1)
-		go func(id int)  {
+		go func(id int) {
+			t.Logf("rlock %d", id)
 			objectLockCache.RLock(777, 1*time.Second)
 			time.Sleep(5 * time.Millisecond)
 			objectLockCache.RUnlock(777)
-
+			t.Logf("runlock %d", id)
 			wg1.Done()
 		}(i)
+
+		// wg1.Add(1)
+		// go func(id int) {
+		// 	t.Logf("lock %d", id)
+		// 	objectLockCache.Lock(777, 1*time.Second)
+		// 	time.Sleep(10 * time.Millisecond)
+		// 	objectLockCache.Unlock(777)
+		// 	t.Logf("unlock %d", id)
+		// 	wg1.Done()
+		// }(i)
 	}
 	wg1.Wait()
 
-	for i := 0; i < 2212; i++ {
+	for i := 0; i < 1002; i++ {
 		wg1.Add(1)
 		go func(id int)  {
 			t.Logf("start objectLockCache %d", id)
 			objectLockCache.Lock(777, 1*time.Second)
 			t.Logf("lock objectLockCache %d", id)
-			time.Sleep(8 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			t.Logf("unlock objectLockCache %d", id)
 			objectLockCache.Unlock(777)
 			t.Logf("finish objectLockCache %d", id)

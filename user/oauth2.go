@@ -404,7 +404,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	var response *http.Response
 	var err error
 	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
-		response, err = netClient.Get(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT") + "/?" + data.Encode())
+		response, err = netClient.Get(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT") + "?" + data.Encode())
 	} else {
 		response, err = netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
 	}
