@@ -33,8 +33,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/location"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/memstore"
+	"github.com/nextgis/go-sessions"
+	"github.com/nextgis/go-sessions/memstore"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -89,6 +89,11 @@ func FloatOption(key string) float64 {
 	return viper.GetFloat64(key)
 }
 
+// IntSliceOption return int slice option
+func IntSliceOption(key string) []int {
+	return viper.GetIntSlice(key)
+}
+
 // SetStringOption set string option
 func SetStringOption(key string, value string) error {
 	viper.Set(key, value)
@@ -119,7 +124,7 @@ func SetFloatOption(key string, value float64) error {
 	return WriteConfig()
 }
 
-// StringSliceOption return string slice option
+// StringSliceOption set string slice option
 func SetStringSliceOption(key string, value []string) error {
 	viper.Set(key, value)
 	return WriteConfig()
@@ -128,6 +133,12 @@ func SetStringSliceOption(key string, value []string) error {
 // SetDefaultOption Set default value to option
 func SetDefaultOption(key string, value interface{}) {
 	viper.SetDefault(key, value)
+}
+
+// SetIntSliceOption set int slice option
+func SetIntSliceOption(key string, value []int) error {
+	viper.Set(key, value)
+	return WriteConfig()
 }
 
 // RegisterAlias Register alias for option key
@@ -253,6 +264,9 @@ func CaptureMessage(msg string, logMessage bool) {
 
 // CaptureException capture error for sentry
 func CaptureException(err error, logMessage bool) {
+	if err == nil {
+		return
+	}
 	sentry.CaptureException(err)
 	if logMessage {
 		fmt.Println(err.Error())
@@ -261,6 +275,9 @@ func CaptureException(err error, logMessage bool) {
 
 // CaptureExceptionFromGin capture error from gin for sentry
 func CaptureExceptionFromGin(gc *gin.Context, err error, logMessage bool) {
+	if err == nil {
+		return
+	}
 	if hub := sentrygin.GetHubFromContext(gc); hub != nil {
 		hub.CaptureException(err)
 	}

@@ -7,7 +7,7 @@
  * Last Modified: Sunday, 20th September 2020 1:04:44 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2023 NextGIS, <info@nextgis.com>
+ * Copyright 2019-2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

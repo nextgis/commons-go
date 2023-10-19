@@ -34,7 +34,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/sessions"
+	"github.com/nextgis/go-sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/nextgis/commons-go/context"
