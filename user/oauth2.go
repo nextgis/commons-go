@@ -7,7 +7,7 @@
  * Last Modified: Sunday, 20th September 2020 1:03:48 am
  * Modified By: Dmitry Baryshnikov, <dmitry.baryshnikov@nextgis.com>
  * -----
- * Copyright 2019 - 2020 NextGIS, <info@nextgis.com>
+ * Copyright 2019-2023 NextGIS, <info@nextgis.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,14 +25,11 @@
 package users
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/nextgis/go-sessions"
 	"github.com/gin-gonic/gin"
@@ -48,6 +45,8 @@ const (
 	KeycloakAuthType = 2
 	// CustomAuthType Custom auth type
 	CustomAuthType = 3
+	// BlitzAuthType Blitz auth type
+	BlitzAuthType = 4
 )
 
 const (
@@ -203,17 +202,23 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 
 	data := url.Values{}
 	data.Set("refresh_token", token.RefreshToken)
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
-
-	// response, err := netClient.PostForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), data)
-	_, err := util.PostRemoteForm(context.StringOption("OAUTH2_LOGOUT_ENDPOINT"), "", "", headers, data)
+	url := context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
+	var err error
+	clientID := context.StringOption("OAUTH2_CLIENT_ID")
+	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
+	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
+		_, err = util.PostRemoteForm(url, clientID, clientSecret, 
+			map[string]string{}, data)
+	} else {
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+		_, err = util.PostRemoteForm(url, "", "", headers, data)
+	}
 	if err != nil {
 		err := fmt.Errorf("failed to logout. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
-
 	return nil
 }
 
@@ -226,9 +231,21 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	// 	Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	// }
 // 
-	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
 
-	bodyBytes, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
+	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
+	var err error
+	clientID := context.StringOption("OAUTH2_CLIENT_ID")
+	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
+	var bodyBytes []byte
+	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
+		bodyBytes, err = util.PostRemoteForm(url, clientID, clientSecret, 
+			map[string]string{}, data)
+	} else { 
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+			data)
+	}
 	if err != nil {
 		err := fmt.Errorf("failed to get access token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -251,8 +268,6 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 	}
 
 	data := url.Values{}
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)
 	data.Set("redirect_uri", redirectURI)
@@ -263,8 +278,6 @@ func GetToken(code, redirectURI, query string) (*TokenJSON, error) {
 // GetTokenByClientSecret Get access token for client id and client secret
 func GetTokenByClientSecret() (*TokenJSON, error) {
 	data := url.Values{}
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
 	data.Set("grant_type", "client_credentials")
 
 	return getToken(data)
@@ -389,41 +402,29 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 
 // TokenIntrospection Token introspection
 func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	}
-	var netClient = &http.Client{
-		Transport: tr,
-		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	}
-
 	data := url.Values{}
 	data.Set("token", token.AccessToken)
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
-	var response *http.Response
+	var bodyBytes []byte
 	var err error
+	url := context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT")
+	clientID := context.StringOption("OAUTH2_CLIENT_ID")
+	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
-		response, err = netClient.Get(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT") + "?" + data.Encode())
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+		bodyBytes, _, err = util.GetRemoteBytes(url + "?" + data.Encode(), "", 
+			"", map[string]string{})
+	} else if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
+		bodyBytes, err = util.PostRemoteForm(url, clientID,
+			clientSecret, map[string]string{}, data)
 	} else {
-		response, err = netClient.PostForm(context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT"), data)
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to get token introspection. %s", err.Error())
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to get token introspection. Return status code is %d, Body: %s",
-			response.StatusCode, util.GetErrorDescription(bodyBytes))
-		context.CaptureException(err, gin.IsDebugging())
-		return nil, err
-	}
-	bodyBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		err := fmt.Errorf("failed to get token introspection. %s", err.Error())
+		err := fmt.Errorf("failed to get token introspection. %s [%s]", err.Error(), bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -526,8 +527,8 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", token.RefreshToken)
-	data.Set("client_id", context.StringOption("OAUTH2_CLIENT_ID"))
-	data.Set("client_secret", context.StringOption("OAUTH2_CLIENT_SECRET"))
+	clientID := context.StringOption("OAUTH2_CLIENT_ID")
+	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 
 	fullScope := context.StringOption("OAUTH2_SCOPE")
 	if len(scope) > 0 {
@@ -538,8 +539,18 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		data.Set("scope", fullScope)
 	}
 
-	// response, err := netClient.PostForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), data)
-	bodyBytes, err := util.PostRemoteForm(context.StringOption("OAUTH2_TOKEN_ENDPOINT"), "", "", map[string]string{}, data)
+	var bodyBytes []byte 
+	var err error
+	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
+	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
+		bodyBytes, err = util.PostRemoteForm(url, clientID, clientSecret, 
+			map[string]string{}, data)
+	} else {
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+			data)
+	}
 	if err != nil {
 		err := fmt.Errorf("failed to refresh token. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())

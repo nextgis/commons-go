@@ -540,3 +540,8 @@ func GetErrorDescription(bodyBytes []byte) string {
 func GetUA() string {
 	return fmt.Sprintf("%s/%s", context.GetAppName(), context.GetAppVersion())
 }
+
+// GetVersion return library version
+func GetVersion() string {
+	return "1.9.0"
+}
