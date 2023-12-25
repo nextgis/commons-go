@@ -429,17 +429,19 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-	if gin.IsDebugging() {
-		fmt.Printf("PostForm to remote url: %s. Data %v\n", url, data)
-	}
+
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
 
+	addHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 	setupRequest(req, username, password, addHeaders)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	if gin.IsDebugging() {
+		fmt.Printf("PostForm to remote url: %s (%v). Data %s\n", url, req.Header, data.Encode())
+	}
 
 	response, err := netClient.Do(req)
 	if err != nil {
@@ -449,14 +451,14 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(response.Body)
-		err := fmt.Errorf("failed to refresh token. Return status code is %d, Body: %s",
+		err := fmt.Errorf("return status code is %d, Body: %s",
 			response.StatusCode, GetErrorDescription(bodyBytes))
 		// sentry.CaptureException(err) -- don't waste sentry
 		return nil, err
 	}
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
-		err := fmt.Errorf("failed to refresh token. %s", err.Error())
+		err := fmt.Errorf("%s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}

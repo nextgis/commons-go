@@ -223,15 +223,6 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 }
 
 func getToken(data url.Values) (*TokenJSON, error) {
-	// tr := &http.Transport{
-	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-	// }
-	// var netClient = &http.Client{
-	// 	Transport: tr,
-	// 	Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
-	// }
-// 
-
 	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
 	var err error
 	clientID := context.StringOption("OAUTH2_CLIENT_ID")
