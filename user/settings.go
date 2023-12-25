@@ -93,6 +93,25 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
 			context.SetStringOption("OAUTH2_GROUPS_JWT_KEY", oi.GroupsJWTKey)
 		}
+	} else if oi.Type == BlitzAuthType {
+		if len(oi.Endpoint) > 0 {
+			endpoint := oi.Endpoint
+			endpoint = strings.TrimSuffix(endpoint, "/")
+
+			context.SetStringOption("OAUTH2_ENDPOINT", oi.Endpoint)
+			context.SetStringOption("OAUTH2_TOKEN_ENDPOINT", endpoint + "/blitz/oauth/te")
+			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", endpoint + "/blitz/oauth/ae")
+			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", endpoint + "/blitz/oauth/introspect")
+			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/blitz/oauth/userinfo")
+			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/blitz/oauth/logout")
+
+			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "sub")
+			context.SetStringOption("OAUTH2_PROFILE_KEYNAME_ATTR", "sub")
+			context.SetStringOption("OAUTH2_PROFILE_FIRSTNAME_ATTR", "given_name")
+			context.SetStringOption("OAUTH2_PROFILE_LASTNAME_ATTR", "family_name")
+			context.SetStringOption("OAUTH2_SCOPE", oi.Scope)
+			context.SetStringOption("OAUTH2_GROUPS_JWT_KEY", oi.GroupsJWTKey)
+		}
 	} else {
 		// if len(oi.TokenEndpoint) > 0 {
 		// 	context.SetStringOption("OAUTH2_TOKEN_ENDPOINT", strings.TrimSuffix(oi.TokenEndpoint, "/"))

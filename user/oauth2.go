@@ -215,7 +215,7 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 		_, err = util.PostRemoteForm(url, "", "", headers, data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to logout. %s", err.Error())
+		err := fmt.Errorf("failed to logout [type: %d]. %s", context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return err
 	}
@@ -247,14 +247,14 @@ func getToken(data url.Values) (*TokenJSON, error) {
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to get access token. %s", err.Error())
+		err := fmt.Errorf("failed to get access token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
 	var token TokenJSON
 	err = json.Unmarshal(bodyBytes, &token)
 	if err != nil {
-		err := fmt.Errorf("failed to parse access token. %s", err.Error())
+		err := fmt.Errorf("failed to parse access token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -424,7 +424,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to get token introspection. %s [%s]", err.Error(), bodyBytes)
+		err := fmt.Errorf("failed to get token introspection [url: %s, type: %d]. %s [%s]", url, context.IntOption("OAUTH2_TYPE"), err.Error(), bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	var ir IntrospectResponse
 	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
-		err := fmt.Errorf("failed to parse token introspection. %s", err.Error())
+		err := fmt.Errorf("failed to parse token introspection [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -552,7 +552,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to refresh token. %s", err.Error())
+		err := fmt.Errorf("failed to refresh token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -560,7 +560,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	var t TokenJSON
 	err = json.Unmarshal(bodyBytes, &t)
 	if err != nil {
-		err := fmt.Errorf("failed to parse token. %s", err.Error())
+		err := fmt.Errorf("failed to parse token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
