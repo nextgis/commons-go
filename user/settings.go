@@ -102,7 +102,7 @@ func UpdateOAuth2Settings(oi *OAuth2Info) {
 			context.SetStringOption("OAUTH2_TOKEN_ENDPOINT", endpoint + "/blitz/oauth/te")
 			context.SetStringOption("OAUTH2_AUTH_ENDPOINT", endpoint + "/blitz/oauth/ae")
 			context.SetStringOption("OAUTH2_INTROSPECTION_ENDPOINT", endpoint + "/blitz/oauth/introspect")
-			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/blitz/oauth/userinfo")
+			context.SetStringOption("OAUTH2_USERINFO_ENDPOINT", endpoint + "/blitz/oauth/me")
 			context.SetStringOption("OAUTH2_LOGOUT_ENDPOINT", endpoint + "/blitz/oauth/logout")
 
 			context.SetStringOption("OAUTH2_PROFILE_SUBJ_ATTR", "sub")

@@ -28,7 +28,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.6.0 // indirect
-	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848 // indirect
+	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

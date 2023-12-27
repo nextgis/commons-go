@@ -275,6 +275,10 @@ func GetTokenByClientSecret() (*TokenJSON, error) {
 }
 
 func unmarshalUserInfo(claims map[string]interface{}) UserInfo {
+	if gin.IsDebugging() {
+		fmt.Printf("get userInfo from JWT: %v\n", claims)
+	}
+
 	var ui UserInfo
 	if val, ok := claims[context.StringOption("OAUTH2_PROFILE_KEYNAME_ATTR")]; ok {
 		ui.Username = val.(string)
