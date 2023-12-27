@@ -365,6 +365,9 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 
 	var ui UserInfo
 	if jwtVal != nil {
+		if gin.IsDebugging() {
+			fmt.Printf("GetUserInfo jwtVal: %v\n", jwtVal)
+		}
 		if claims, ok := jwtVal.Claims.(jwt.MapClaims); ok {
 			ui = unmarshalUserInfo(claims)
 		}
@@ -375,8 +378,11 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 	}
 
 	// Get user info
-	bodyBytes, _, err := util.GetRemoteBytes(
-		context.StringOption("OAUTH2_USERINFO_ENDPOINT"), "access_token", 
+	url := context.StringOption("OAUTH2_USERINFO_ENDPOINT")
+	if gin.IsDebugging() {
+		fmt.Printf("GetUserInfo cannot parse JWT - get user info from open id %s\n", url)
+	}
+	bodyBytes, _, err := util.GetRemoteBytes(url, "access_token", 
 		token.TokenType+" "+token.AccessToken, map[string]string{}) 
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
