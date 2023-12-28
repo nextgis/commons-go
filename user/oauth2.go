@@ -229,9 +229,6 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	var bodyBytes []byte
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		if gin.IsDebugging() {
-			fmt.Printf("Get token. client_secrets %s [%s]\n", clientSecret, url.QueryEscape(clientSecret))	
-		}
 		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID, url.QueryEscape(clientSecret),
 			map[string]string{}, data)
 	} else {
@@ -416,9 +413,6 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 		bodyBytes, _, err = util.GetRemoteBytes(introURL+"?"+data.Encode(), "",
 			"", map[string]string{})
 	} else if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		if gin.IsDebugging() {
-			fmt.Printf("Introspection. client_secrets %s [%s]\n", clientSecret, url.QueryEscape(clientSecret))	
-		}
 		bodyBytes, err = util.PostRemoteForm(introURL, clientID,
 			url.QueryEscape(clientSecret), map[string]string{}, data)
 	} else {
