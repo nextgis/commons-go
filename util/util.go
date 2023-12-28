@@ -429,8 +429,6 @@ func PostRemoteForm(url, username, password string, addHeaders map[string]string
 		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-
-
 	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err

@@ -31,11 +31,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nextgis/go-sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/nextgis/commons-go/context"
 	"github.com/nextgis/commons-go/util"
+	"github.com/nextgis/go-sessions"
 )
 
 const (
@@ -146,7 +146,7 @@ type OAuth2Info struct {
 	ClientID              string `form:"client_id" json:"client_id"`                           // OAUTH2_CLIENT_ID
 	ClientSecret          string `form:"client_secret" json:"client_secret"`                   // OAUTH2_CLIENT_SECRET
 	Scope                 string `form:"scope" json:"scope"`                                   // OAUTH2_SCOPE
-	Type                  int    `form:"type" json:"type" binding:"required"`                  // OAUTH2_TYPE
+	Type                  int    `form:"type" json:"type"`                                     // OAUTH2_TYPE
 	TokenEndpoint         string `form:"token_endpoint" json:"token_endpoint"`                 // OAUTH2_TOKEN_ENDPOINT
 	AuthEndpoint          string `form:"auth_endpoint" json:"auth_endpoint"`                   // OAUTH2_AUTH_ENDPOINT
 	UserInfoEndpoint      string `form:"userinfo_endpoint" json:"userinfo_endpoint"`           // OAUTH2_USERINFO_ENDPOINT
@@ -202,17 +202,17 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 
 	data := url.Values{}
 	data.Set("refresh_token", token.RefreshToken)
-	url := context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
+	logoutURL := context.StringOption("OAUTH2_LOGOUT_ENDPOINT")
 	var err error
 	clientID := context.StringOption("OAUTH2_CLIENT_ID")
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		_, err = util.PostRemoteForm(url, clientID, clientSecret, 
+		_, err = util.PostRemoteForm(logoutURL, clientID, url.QueryEscape(clientSecret),
 			map[string]string{}, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
-		_, err = util.PostRemoteForm(url, "", "", headers, data)
+		_, err = util.PostRemoteForm(logoutURL, "", "", headers, data)
 	}
 	if err != nil {
 		err := fmt.Errorf("failed to logout [type: %d]. %s", context.IntOption("OAUTH2_TYPE"), err.Error())
@@ -223,29 +223,29 @@ func OAuth2Logout(token *TokenJSON, headers map[string]string) error {
 }
 
 func getToken(data url.Values) (*TokenJSON, error) {
-	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
+	tokenURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
 	var err error
 	clientID := context.StringOption("OAUTH2_CLIENT_ID")
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	var bodyBytes []byte
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(url, clientID, clientSecret, 
+		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID, url.QueryEscape(clientSecret),
 			map[string]string{}, data)
-	} else { 
+	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
-		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+		bodyBytes, err = util.PostRemoteForm(tokenURL, "", "", map[string]string{},
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to get access token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
+		err := fmt.Errorf("failed to get access token [url: %s, type: %d]. %s", tokenURL, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
 	var token TokenJSON
 	err = json.Unmarshal(bodyBytes, &token)
 	if err != nil {
-		err := fmt.Errorf("failed to parse access token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
+		err := fmt.Errorf("failed to parse access token [url: %s, type: %d]. %s", tokenURL, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -365,9 +365,6 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 
 	var ui UserInfo
 	if jwtVal != nil {
-		if gin.IsDebugging() {
-			fmt.Printf("GetUserInfo jwtVal: %v\n", jwtVal)
-		}
 		if claims, ok := jwtVal.Claims.(jwt.MapClaims); ok {
 			ui = unmarshalUserInfo(claims)
 		}
@@ -382,8 +379,8 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 	if gin.IsDebugging() {
 		fmt.Printf("GetUserInfo cannot parse JWT - get user info from open id %s\n", url)
 	}
-	bodyBytes, _, err := util.GetRemoteBytes(url, "access_token", 
-		token.TokenType+" "+token.AccessToken, map[string]string{}) 
+	bodyBytes, _, err := util.GetRemoteBytes(url, "access_token",
+		token.TokenType+" "+token.AccessToken, map[string]string{})
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -407,25 +404,25 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	data.Set("token", token.AccessToken)
 	var bodyBytes []byte
 	var err error
-	url := context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT")
+	introURL := context.StringOption("OAUTH2_INTROSPECTION_ENDPOINT")
 	clientID := context.StringOption("OAUTH2_CLIENT_ID")
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	if context.IntOption("OAUTH2_TYPE") == NextGISAuthType {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
-		bodyBytes, _, err = util.GetRemoteBytes(url + "?" + data.Encode(), "", 
+		bodyBytes, _, err = util.GetRemoteBytes(introURL+"?"+data.Encode(), "",
 			"", map[string]string{})
 	} else if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(url, clientID,
-			clientSecret, map[string]string{}, data)
+		bodyBytes, err = util.PostRemoteForm(introURL, clientID,
+			url.QueryEscape(clientSecret), map[string]string{}, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
-		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+		bodyBytes, err = util.PostRemoteForm(introURL, "", "", map[string]string{},
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to get token introspection [url: %s, type: %d]. %s [%s]", url, context.IntOption("OAUTH2_TYPE"), err.Error(), bodyBytes)
+		err := fmt.Errorf("failed to get token introspection [url: %s, type: %d]. %s [%s]", introURL, context.IntOption("OAUTH2_TYPE"), err.Error(), bodyBytes)
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -433,7 +430,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 	var ir IntrospectResponse
 	err = json.Unmarshal(bodyBytes, &ir)
 	if err != nil {
-		err := fmt.Errorf("failed to parse token introspection [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
+		err := fmt.Errorf("failed to parse token introspection [url: %s, type: %d]. %s", introURL, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -443,7 +440,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 // GetSupportInfo Get support information
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	bodyBytes, _, err := util.GetRemoteBytes(
-		context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/", 
+		context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/",
 		"access_token", token.TokenType+" "+token.AccessToken, map[string]string{})
 	if err != nil {
 		context.CaptureException(err, gin.IsDebugging())
@@ -469,10 +466,10 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		return nil, err
 	}
 
-	URL := context.StringOption("OAUTH2_ENDPOINT")+
-	"/api/v1/integration/user_info/"+ngID+
-	"?client_id="+context.StringOption("OAUTH2_CLIENT_ID")+
-	"&client_secret="+context.StringOption("OAUTH2_CLIENT_SECRET")
+	URL := context.StringOption("OAUTH2_ENDPOINT") +
+		"/api/v1/integration/user_info/" + ngID +
+		"?client_id=" + context.StringOption("OAUTH2_CLIENT_ID") +
+		"&client_secret=" + context.StringOption("OAUTH2_CLIENT_SECRET")
 	bodyBytes, _, err := util.GetRemoteBytes(URL, "", "", map[string]string{})
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
@@ -510,7 +507,7 @@ func OAuth2Options(gc *gin.Context) {
 		Enabled:       context.BoolOption("OAUTH2_LOGIN"),
 		OAuthEndPoint: context.StringOption("OAUTH2_AUTH_ENDPOINT"),
 		ClientID:      context.StringOption("OAUTH2_CLIENT_ID"),
-		AltLogins:     context.BoolOption("LOCAL_LOGIN"), // context.BoolOption("LDAP_LOGIN") || 
+		AltLogins:     context.BoolOption("LOCAL_LOGIN"), // context.BoolOption("LDAP_LOGIN") ||
 		Scope:         context.StringOption("OAUTH2_SCOPE"),
 	}
 	gc.JSON(http.StatusOK, options)
@@ -540,20 +537,20 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 		data.Set("scope", fullScope)
 	}
 
-	var bodyBytes []byte 
+	var bodyBytes []byte
 	var err error
-	url := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
+	refreshURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(url, clientID, clientSecret, 
+		bodyBytes, err = util.PostRemoteForm(refreshURL, clientID, url.QueryEscape(clientSecret),
 			map[string]string{}, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
-		bodyBytes, err = util.PostRemoteForm(url, "", "", map[string]string{}, 
+		bodyBytes, err = util.PostRemoteForm(refreshURL, "", "", map[string]string{},
 			data)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to refresh token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
+		err := fmt.Errorf("failed to refresh token [url: %s, type: %d]. %s", refreshURL, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
@@ -561,7 +558,7 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	var t TokenJSON
 	err = json.Unmarshal(bodyBytes, &t)
 	if err != nil {
-		err := fmt.Errorf("failed to parse token [url: %s, type: %d]. %s", url, context.IntOption("OAUTH2_TYPE"), err.Error())
+		err := fmt.Errorf("failed to parse token [url: %s, type: %d]. %s", refreshURL, context.IntOption("OAUTH2_TYPE"), err.Error())
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, err
 	}
