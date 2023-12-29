@@ -25,6 +25,7 @@
 package users
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -185,6 +186,12 @@ func (oi *OAuth2Info) Fill() {
 	oi.GroupsJWTKey = context.StringOption("OAUTH2_GROUPS_JWT_KEY")
 }
 
+func blitzBasicAuthHeader(client_id, client_secret string) string {
+	headerValue := fmt.Sprintf("%s:%s", client_id, client_secret)
+	headerBase64 := base64.URLEncoding.EncodeToString([]byte(headerValue))
+	return fmt.Sprintf("Basic %s", headerBase64)
+}
+
 // Keycloak configuration URL
 // http://s2.nextgis.com/auth/realms/master/.well-known/openid-configuration
 
@@ -229,8 +236,8 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	var bodyBytes []byte
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID, url.QueryEscape(clientSecret),
-			map[string]string{}, data)
+		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID, 
+			url.QueryEscape(clientSecret), map[string]string{}, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
@@ -413,8 +420,11 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 		bodyBytes, _, err = util.GetRemoteBytes(introURL+"?"+data.Encode(), "",
 			"", map[string]string{})
 	} else if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(introURL, clientID,
-			url.QueryEscape(clientSecret), map[string]string{}, data)
+		data.Set("token_type_hint", "access_token")
+		headers := map[string]string{
+			"Authorization": blitzBasicAuthHeader(clientID, clientSecret),
+		}
+		bodyBytes, err = util.PostRemoteForm(introURL, "", "", headers, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
@@ -541,8 +551,10 @@ func RefreshToken(token *TokenJSON, scope string) (*TokenJSON, error) {
 	var err error
 	refreshURL := context.StringOption("OAUTH2_TOKEN_ENDPOINT")
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(refreshURL, clientID, url.QueryEscape(clientSecret),
-			map[string]string{}, data)
+		headers := map[string]string{
+			"Authorization": blitzBasicAuthHeader(clientID, clientSecret),
+		}
+		bodyBytes, err = util.PostRemoteForm(refreshURL, "", "", headers, data)
 	} else {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
