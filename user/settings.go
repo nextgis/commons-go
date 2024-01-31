@@ -191,4 +191,5 @@ func UpdateLDAPSettings(li *LdapInfo) {
 		context.SetStringOption("LDAP_GROUP_ATTR", li.GroupAttribute)
 	}
 	context.SetIntOption("LDAP_DEFAULT_GROUP_ID", li.DefaultGroupID)
+	context.SetBoolOption("LDAP_UPDATE_GROUPS", li.UpdateGroups)
 }

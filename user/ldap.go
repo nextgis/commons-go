@@ -333,6 +333,7 @@ type LdapInfo struct {
 	GroupFilter    string `form:"group_filter" json:"group_filter"`         // LDAP_GROUP_FILTER
 	GroupAttribute string `form:"group_attr" json:"group_attr"`             // LDAP_GROUP_ATTR
 	DefaultGroupID int    `form:"default_group_id" json:"default_group_id"` // LDAP_DEFAULT_GROUP_ID
+	UpdateGroups   bool   `form:"update_groups" json:"update_groups"`       // LDAP_UPDATE_GROUPS
 }
 
 // Fill Fill LdapInfo structure by values
@@ -352,6 +353,7 @@ func (li *LdapInfo) Fill() {
 	li.GroupFilter = context.StringOption("LDAP_GROUP_FILTER")
 	li.GroupAttribute = context.StringOption("LDAP_GROUP_ATTR")
 	li.DefaultGroupID = context.IntOption("LDAP_DEFAULT_GROUP_ID")
+	li.UpdateGroups = context.BoolOption("LDAP_UPDATE_GROUPS")
 }
 
 // TestLDAPConnection test connection to LDAP server
