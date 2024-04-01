@@ -48,6 +48,7 @@ import (
 
 // InfinityDate Infinity date
 var InfinityDate = time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
+
 // OutDate Default date
 var OutDate = time.Date(1970, time.January, 1, 12, 0, 0, 0, time.UTC)
 
@@ -75,7 +76,7 @@ func ArrayToString(values []string, separator string) string {
 func RemoveItem(slice []string, index int) []string {
 	slice[index] = slice[len(slice)-1] // Copy last element to index i.
 	slice[len(slice)-1] = ""           // Erase last element (write zero value).
-	return slice[:len(slice)-1]       // Truncate slice.
+	return slice[:len(slice)-1]        // Truncate slice.
 }
 
 // HashPassword Create hash from password
@@ -101,23 +102,23 @@ func RandomKey(n int) (string, error) {
 
 // Contains check value present in array
 func Contains[K comparable](a []K, x K) bool {
-    for _, n := range a {
-        if x == n {
-            return true
-        }
-    }
-    return false
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
 }
 
 // DeleteEmptyStrings return string slice without empty strings
 func DeleteEmptyStrings(s []string) []string {
-    var r []string
-    for _, str := range s {
-        if len(str) != 0 {
-            r = append(r, str)
-        }
-    }
-    return r
+	var r []string
+	for _, str := range s {
+		if len(str) != 0 {
+			r = append(r, str)
+		}
+	}
+	return r
 }
 
 // StringToDate Convert string to date
@@ -166,20 +167,20 @@ func IsDirEmpty(name string) (bool, error) {
 
 // IsDirectory Is path directory
 func IsDirectory(path string) (bool, error) {
-    fileInfo, err := os.Stat(path)
-    if err != nil{
-      return false, err
-    }
-    return fileInfo.IsDir(), err
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), err
 }
 
 // FileExists Is file exists
 func FileExists(filename string) bool {
-    info, err := os.Stat(filename)
-    if os.IsNotExist(err) {
-        return false
-    }
-    return !info.IsDir()
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 // QueryParameterString Return query parameter or default value
@@ -239,7 +240,7 @@ func GetRemoteFile(url, username, password string, addHeaders map[string]string,
 	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("FILE_TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("FILE_TIMEOUT")),
 	}
 
 	// Create blank file
@@ -310,16 +311,16 @@ func PostRemoteSmallFile(url, username, password string, addHeaders map[string]s
 
 	fileStat, err := file.Stat()
 	if err != nil {
-    	return nil, http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	err = writer.WriteField("totalSize", fmt.Sprintf("%d", fileStat.Size()))
 	if err != nil {
-    	return nil, http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, err
 	}
 	err = writer.WriteField("filename", dstFileName)
 	if err != nil {
-    	return nil, http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, err
 	}
 	err = writer.Close()
 	if err != nil {
@@ -369,30 +370,36 @@ func setupRequest(req *http.Request, username, password string, addHeaders map[s
 			req.SetBasicAuth(username, password)
 		}
 	}
-	for k, v := range addHeaders { 
+	for k, v := range addHeaders {
 		req.Header.Add(k, v)
 	}
 }
 
 // GetRemoteBytes Get remote data with timeout
-func GetRemoteBytes(url, username, password string, addHeaders map[string]string) ([]byte, int, error) {
+func GetRemoteBytes(url, username, password string, addHeaders map[string]string, body []byte) ([]byte, int, error) {
 	// https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
 	if gin.IsDebugging() {
 		fmt.Printf("Get remote url: %s\n", url)
 	}
 
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: context.BoolOption("HTTP_SKIP_SSL_VERIFY")},
+	}
 	var netClient = &http.Client{
 		Transport: tr,
-		Timeout: time.Second * time.Duration(context.IntOption("TIMEOUT")),
+		Timeout:   time.Second * time.Duration(context.IntOption("TIMEOUT")),
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	var (
+		req *http.Request
+		err error
+	)
+
+	req, err = http.NewRequest("GET", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
+
 	setupRequest(req, username, password, addHeaders)
 	response, err := netClient.Do(req)
 	if err != nil {
@@ -483,7 +490,7 @@ func sendRemoteBytes(requestType, url, username, password string, addHeaders map
 	}
 
 	if gin.IsDebugging() {
-		fmt.Printf("%s remote url: %s. Data %s\n", requestType,  url, jsonData)
+		fmt.Printf("%s remote url: %s. Data %s\n", requestType, url, jsonData)
 	}
 
 	req, err := http.NewRequest(requestType, url, bytes.NewBuffer(jsonData))
@@ -536,6 +543,7 @@ func GetErrorDescription(bodyBytes []byte) string {
 	}
 	return b.Error
 }
+
 // GetUA return user agent
 func GetUA() string {
 	return fmt.Sprintf("%s/%s", context.GetAppName(), context.GetAppVersion())
@@ -543,5 +551,5 @@ func GetUA() string {
 
 // GetVersion return library version
 func GetVersion() string {
-	return "1.9.0"
+	return "1.10.0"
 }
