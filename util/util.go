@@ -395,12 +395,7 @@ func GetRemoteBytes(url, username, password string, addHeaders map[string]string
 		err error
 	)
 
-	if body != nil {
-		req, err = http.NewRequest("GET", url, bytes.NewBuffer(body))
-	} else {
-		req, err = http.NewRequest("GET", url, nil)
-	}
-
+	req, err = http.NewRequest("GET", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -556,5 +551,5 @@ func GetUA() string {
 
 // GetVersion return library version
 func GetVersion() string {
-	return "1.9.0"
+	return "1.10.0"
 }
