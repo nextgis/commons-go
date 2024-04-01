@@ -277,7 +277,7 @@ func GetRemoteFile(url, username, password string, addHeaders map[string]string,
 
 // GetRemoteSmallFile Get remote data with timeout and write to file
 func GetRemoteSmallFile(url, username, password string, addHeaders map[string]string, outPath string) (int, error) {
-	b, code, err := GetRemoteBytes(url, username, password, addHeaders)
+	b, code, err := GetRemoteBytes(url, username, password, addHeaders, nil)
 	if err != nil {
 		return code, err
 	}

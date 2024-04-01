@@ -41,16 +41,16 @@ import (
 )
 
 // GetAvatar return avatar png bytes
-func GetAvatar(name, login, email string, size int, palette []color.Color, 
+func GetAvatar(name, login, email string, size int, palette []color.Color,
 	random bool) []byte {
 	var data []byte
 	code := http.StatusNotFound
 	var err error
 	if len(email) > 0 {
 		url := getGravatarURL(email, "404")
-		data, code, err = GetRemoteBytes(url, "", "", map[string]string{})
+		data, code, err = GetRemoteBytes(url, "", "", map[string]string{}, nil)
 	}
-	if err != nil || code == http.StatusNotFound {		
+	if err != nil || code == http.StatusNotFound {
 		name = strings.TrimSpace(name)
 		firstRune, _ := utf8.DecodeRuneInString(name)
 		if !isHan(firstRune) && !unicode.IsLetter(firstRune) {
@@ -86,7 +86,7 @@ func GetAvatar(name, login, email string, size int, palette []color.Color,
 			context.CaptureException(err, gin.IsDebugging())
 			return nil
 		}
-		
+
 		return buf.Bytes()
 	}
 	return data
@@ -94,7 +94,7 @@ func GetAvatar(name, login, email string, size int, palette []color.Color,
 
 // Is it Chinese characters?
 func isHan(r rune) bool {
-	return unicode.Is(unicode.Scripts["Han"], r) 
+	return unicode.Is(unicode.Scripts["Han"], r)
 }
 
 func getGravatarURL(email string, d string) string {

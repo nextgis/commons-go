@@ -236,7 +236,7 @@ func getToken(data url.Values) (*TokenJSON, error) {
 	clientSecret := context.StringOption("OAUTH2_CLIENT_SECRET")
 	var bodyBytes []byte
 	if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
-		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID, 
+		bodyBytes, err = util.PostRemoteForm(tokenURL, clientID,
 			url.QueryEscape(clientSecret), map[string]string{}, data)
 	} else {
 		data.Set("client_id", clientID)
@@ -387,7 +387,7 @@ func GetUserInfo(token *TokenJSON) (UserInfo, error) {
 		fmt.Printf("GetUserInfo cannot parse JWT - get user info from open id %s\n", url)
 	}
 	bodyBytes, _, err := util.GetRemoteBytes(url, "access_token",
-		token.TokenType+" "+token.AccessToken, map[string]string{})
+		token.TokenType+" "+token.AccessToken, map[string]string{}, nil)
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
@@ -418,7 +418,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
 		bodyBytes, _, err = util.GetRemoteBytes(introURL+"?"+data.Encode(), "",
-			"", map[string]string{})
+			"", map[string]string{}, nil)
 	} else if context.IntOption("OAUTH2_TYPE") == BlitzAuthType {
 		data.Set("token_type_hint", "access_token")
 		headers := map[string]string{
@@ -451,7 +451,7 @@ func TokenIntrospection(token *TokenJSON) (*IntrospectResponse, error) {
 func GetSupportInfo(token *TokenJSON) (*NGSupportInfo, error) {
 	bodyBytes, _, err := util.GetRemoteBytes(
 		context.StringOption("OAUTH2_ENDPOINT")+"/api/v1/support_info/",
-		"access_token", token.TokenType+" "+token.AccessToken, map[string]string{})
+		"access_token", token.TokenType+" "+token.AccessToken, map[string]string{}, nil)
 	if err != nil {
 		context.CaptureException(err, gin.IsDebugging())
 		return nil, fmt.Errorf("failed to get support_info. %s", err.Error())
@@ -480,7 +480,7 @@ func GetUserSuppotInfo(ngID string) (*NGUserSupportInfo, error) {
 		"/api/v1/integration/user_info/" + ngID +
 		"?client_id=" + context.StringOption("OAUTH2_CLIENT_ID") +
 		"&client_secret=" + context.StringOption("OAUTH2_CLIENT_SECRET")
-	bodyBytes, _, err := util.GetRemoteBytes(URL, "", "", map[string]string{})
+	bodyBytes, _, err := util.GetRemoteBytes(URL, "", "", map[string]string{}, nil)
 	if err != nil {
 		err := fmt.Errorf("failed to get user_info. %s", err.Error())
 		context.CaptureException(err, gin.IsDebugging())
