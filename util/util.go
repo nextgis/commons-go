@@ -551,5 +551,5 @@ func GetUA() string {
 
 // GetVersion return library version
 func GetVersion() string {
-	return "1.10.0"
+	return "1.10.1"
 }
